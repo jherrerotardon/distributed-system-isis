@@ -1,8 +1,11 @@
 package data;
 
+import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
+import javax.ws.rs.core.UriBuilder;
 
 import utils.Peticion;
 
@@ -36,7 +39,7 @@ public class Proceso extends Thread {
 		
 		for (String ip : ipProcesos) {
 			
-			Peticion.peticionGet(ip, metodo);
+			Peticion.peticionGet(ip, metodo, "m="+ m.getMensaje() + "&" + "k=" + m.getId());
 			
 			try {
 				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
