@@ -32,7 +32,8 @@ public class Proceso extends Thread {
 		Mensaje m = new Mensaje(12, 25, 1, "estado");
 		
 		
-		Peticion.peticionPost("localhost", Peticion.MENSAJE, MensajeUtils.getJsonFromMensaje(m));
+		String json = Peticion.peticionPost("localhost", Peticion.MENSAJE, MensajeUtils.getJsonFromMensaje(m));
+		System.out.println("retorno" + json);
 	}
 	
 	@Override

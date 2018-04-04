@@ -38,15 +38,16 @@ public class Ordenacion {
 	
 	@Path("mensaje")
 	@POST
-	@Consumes(MediaType.TEXT_PLAIN) 
-	@Produces(MediaType.TEXT_PLAIN)
-	public String mensaje(String json, @QueryParam(value = "k") String k) {
+	@Consumes(MediaType.APPLICATION_JSON) 
+	@Produces(MediaType.APPLICATION_JSON)
+	public String mensaje(String json ,@QueryParam(value = "k") String k) {
 		
 		
 		
 		lc1(orden);
 		Mensaje m = MensajeUtils.getMensajeFromJson(json);
-		//Peticion.peticionPost("localhost", Peticion.PROPUESTA, MensajeUtils.getJsonFromMensaje(m));
+		
+		Peticion.peticionPost("localhost", Peticion.PROPUESTA, MensajeUtils.getJsonFromMensaje(m));
 		return json;
 
 	}
