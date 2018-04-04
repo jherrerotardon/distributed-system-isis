@@ -1,5 +1,6 @@
 package services;
 
+import java.util.LinkedList;
 import java.util.Queue;
 
 import javax.annotation.PostConstruct;
@@ -15,38 +16,31 @@ import javax.ws.rs.core.MediaType;
 
 import data.Mensaje;
 import data.Proceso;
+import utils.Peticion;
 
 @Singleton
 @Path("ordenacion")
 public class Ordenacion {
-	Proceso[] procesos = new Proceso[2];
 
-	//Temporal hasta que sepamos hacer dispatcher
 	private Queue<Mensaje> cola;
 	private int orden;
 	
+	
+	//Temporal hasta que sepamos hacer dispatcher
 	@PostConstruct
 	public void inizializar() {
-		procesos[0] = new Proceso();
-		procesos[1] = new Proceso();
-
-		procesos[0].start();
-		procesos[1].start();
+		cola = new LinkedList<Mensaje>();
+		orden = 0;
 	}
 	
 	@Path("mensaje")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String mensaje(@QueryParam(value = "m") String mesg, @QueryParam(value = "m") String k) {
-//		if (id <= -1) {
-//			return "NO PARAMETRO";
-//		} else if (id >=2){
-//			return "ID NO VALIDA";
-//		} else {
-//			
-//		}
 		
-		orden = orden + 1;
+		
+		
+		lc1(orden);
 		
 		return "OK";
 
@@ -69,4 +63,15 @@ public class Ordenacion {
 	}
 	
 
+	private void lc1(int orden) {
+		orden += 1;
+	}
+
+	private void lc2(int orden, int ordenj) {
+		if (orden > ordenj) {
+			orden += 1;
+		} else {
+			orden = ordenj + 1;
+		}
+	}	
 }
