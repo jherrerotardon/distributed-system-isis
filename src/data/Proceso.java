@@ -13,6 +13,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 
+import utils.MensajeUtils;
 import utils.Peticion;
 
 @Singleton
@@ -26,7 +27,14 @@ public class Proceso extends Thread {
 		cola = new LinkedList<Mensaje>();
 		orden = 0;
 	}
-
+	
+	public static void main(String[] args) {
+		Mensaje m = new Mensaje(12, 25, 1, "estado");
+		
+		
+		Peticion.peticionPost("localhost", Peticion.MENSAJE, MensajeUtils.getJsonFromMensaje(m));
+	}
+	
 	@Override
 	public void run() {
 
@@ -57,19 +65,5 @@ public class Proceso extends Thread {
 			}
 		}
 	}
-
-	private void lc1(int orden) {
-		orden += 1;
-	}
-
-	private void lc2(int orden, int ordenj) {
-		if (orden > ordenj) {
-			orden += 1;
-		} else {
-			orden = ordenj + 1;
-		}
-	}
-
-	
 	
 }

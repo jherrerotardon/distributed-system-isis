@@ -1,7 +1,10 @@
 package utils;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -63,7 +66,7 @@ public class Peticion {
 		return respuesta;
 	}
 	
-	public static String peticionPost(String ip, String metodo, Object obj) {
+	public static String peticionPost(String ip, String metodo, String jsonMensaje) {
 		String respuesta = "";
 		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/ordenacion/";
 		
@@ -72,7 +75,17 @@ public class Peticion {
 			URL url = new URL(servicio + metodo);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			
-			conn.setRequestMethod("GET");
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("Content-Type", "application/json");
+			
+			OutputStream os = conn.getOutputStream();
+            BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(os, "UTF-8"));
+            writer.write(jsonMensaje);
+            writer.flush();
+            writer.close();
+            os.close();
+            
 			if (conn.getResponseCode() != 200) {
 				throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
 			}

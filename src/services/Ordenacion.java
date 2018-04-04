@@ -6,8 +6,10 @@ import java.util.Queue;
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -16,6 +18,7 @@ import javax.ws.rs.core.MediaType;
 
 import data.Mensaje;
 import data.Proceso;
+import utils.MensajeUtils;
 import utils.Peticion;
 
 @Singleton
@@ -34,20 +37,22 @@ public class Ordenacion {
 	}
 	
 	@Path("mensaje")
-	@GET
+	@POST
+	@Consumes(MediaType.TEXT_PLAIN) 
 	@Produces(MediaType.TEXT_PLAIN)
-	public String mensaje(@QueryParam(value = "m") String mesg, @QueryParam(value = "m") String k) {
+	public String mensaje(String json, @QueryParam(value = "k") String k) {
 		
 		
 		
 		lc1(orden);
-		
-		return "OK";
+		Mensaje m = MensajeUtils.getMensajeFromJson(json);
+		//Peticion.peticionPost("localhost", Peticion.PROPUESTA, MensajeUtils.getJsonFromMensaje(m));
+		return json;
 
 	}
 
 	@Path("propuesta")
-	@GET
+	@POST
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta() {
 
@@ -73,5 +78,6 @@ public class Ordenacion {
 		} else {
 			orden = ordenj + 1;
 		}
-	}	
+	}
+		
 }

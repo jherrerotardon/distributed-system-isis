@@ -5,18 +5,15 @@ import data.Mensaje;
 
 public class MensajeUtils {
 	
-	public static void main(String[] args) {
-		Mensaje m = new Mensaje(0, 1, 2, "estado");
-		
-		String json = getJsonString(m);
-		System.out.println(json);
-		
-	}
-	
-	public static String getJsonString(Mensaje m) {
+	public static String getJsonFromMensaje(Mensaje m) {
 		Gson gson = new Gson();
 		String json = gson.toJson(m);
 		return json;
 	}
 
+	public static Mensaje getMensajeFromJson(String json) {
+		Gson gson = new Gson();
+		Mensaje m = gson.fromJson(json, Mensaje.class);
+		return m;
+	}
 }
