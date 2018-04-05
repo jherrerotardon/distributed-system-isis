@@ -25,8 +25,11 @@ import utils.Peticion;
 @Path("ordenacion")
 public class Ordenacion {
 
-	private Queue<Mensaje> cola;
+	private LinkedList<Mensaje> cola;
 	private int orden;
+	private final String localhostIPv6 = "0:0:0:0:0:0:0:1";
+	
+	@Context HttpServletRequest request;
 	
 	
 	//Temporal hasta que sepamos hacer dispatcher
@@ -36,26 +39,41 @@ public class Ordenacion {
 		orden = 0;
 	}
 	
+	@Path("prueba")
+	@GET
+	//@Consumes(MediaType.APPLICATION_JSON) 
+	@Produces(MediaType.APPLICATION_JSON)
+	public String prueba(@QueryParam(value = "k") String k) {
+		
+		System.out.println(request.getRemoteAddr());
+		return request.getRemoteAddr();
+	}
+	
 	@Path("mensaje")
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON) 
 	@Produces(MediaType.APPLICATION_JSON)
 	public String mensaje(String json ,@QueryParam(value = "k") String k) {
-		
-		
+		String ip;
 		
 		lc1(orden);
-		Mensaje m = MensajeUtils.getMensajeFromJson(json);
 		
-		Peticion.peticionPost("localhost", Peticion.PROPUESTA, MensajeUtils.getJsonFromMensaje(m));
+		Mensaje mensajeRecibido = MensajeUtils.getMensajeFromJson(json);
+		cola.push(mensajeRecibido);
+		
+		ip = request.getRemoteAddr().equals(localhostIPv6) ? "localhost" : request.getRemoteAddr();
+		System.out.println("[Mensaje] recibido desde: " + ip + " con contenido: " + json);
+		Peticion.peticionPost(ip, Peticion.PROPUESTA, MensajeUtils.getJsonFromMensaje(mensajeRecibido));
+		
 		return json;
-
 	}
 
 	@Path("propuesta")
 	@POST
-	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.APPLICATION_JSON) 
+	@Produces(MediaType.APPLICATION_JSON)
 	public String propuesta() {
+		
 
 		return "OK";
 	}
