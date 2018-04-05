@@ -29,7 +29,7 @@ public class Proceso extends Thread {
 	}
 	
 	public static void main(String[] args) {
-		Mensaje m = new Mensaje(12, 25, 1, "estado");
+		Mensaje m = new Mensaje(1,5);
 		
 		
 		String json = Peticion.peticionGet("0:0:0:0:0:0:0:1", "prueba");

@@ -57,14 +57,20 @@ public class Ordenacion {
 		String ip;
 		
 		lc1(orden);
-		
+		//Recuperacion y modificación del mensaje antes de guardarlo en la cola
 		Mensaje mensajeRecibido = MensajeUtils.getMensajeFromJson(json);
+		mensajeRecibido.setOrden(orden);
+		mensajeRecibido.setNumPeticiones(0);
+		mensajeRecibido.setEstado(Mensaje.PROVISIONAL);
+		
 		cola.push(mensajeRecibido);
 		
+		//Reconversion de ipv6 a ipv4 cuando viene de localhost 
 		ip = request.getRemoteAddr().equals(localhostIPv6) ? "localhost" : request.getRemoteAddr();
-		System.out.println("[Mensaje] recibido desde: " + ip + " con contenido: " + json);
-		Peticion.peticionPost(ip, Peticion.PROPUESTA, MensajeUtils.getJsonFromMensaje(mensajeRecibido));
 		
+		System.out.println("[Mensaje/" + ip + "]: " + " json: " + json);
+		
+		Peticion.peticionPost(ip, Peticion.PROPUESTA, MensajeUtils.getJsonFromMensaje(mensajeRecibido));
 		return json;
 	}
 
