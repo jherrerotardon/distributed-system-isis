@@ -26,22 +26,39 @@ public class Ordenacion {
 	@Context
 	ServletContext context;
 
-	@Path("mensaje")
-	@Produces(MediaType.TEXT_PLAIN)
+	
+	@Path("inicializar")
 	@GET
-	public String mensaje(@QueryParam(value = "proceso") int numProceso){
+	public void inicializar(@QueryParam(value = "proceso") int numProceso) {
 		
-//		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/mensaje");
-//		try {
-//			dispatcher.forward(request, response);
-//		} catch (ServletException e) {
-//			System.out.println("ServletException");
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			System.out.println("IOException");
-//			e.printStackTrace();
-//		}
-		return "BEBE";
+		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/inicializar");
+		try {
+			dispatcher.forward(request, response);
+		} catch (ServletException e) {
+			System.out.println("ServletException");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("IOException");
+			e.printStackTrace();
+		}
+	}
+	
+	@Path("mensaje")
+	@GET
+	public void mensaje(@QueryParam(value = "proceso") int numProceso){
+		
+		System.out.println(numProceso);
+		
+		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/mensaje");
+		try {
+			dispatcher.forward(request, response);
+		} catch (ServletException e) {
+			System.out.println("ServletException");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("IOException");
+			e.printStackTrace();
+		}
 		
 	}
 
@@ -67,23 +84,6 @@ public class Ordenacion {
 	public void acuerdo(@QueryParam(value = "proceso") int numProceso) {
 
 		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/acuerdo");
-		try {
-			dispatcher.forward(request, response);
-		} catch (ServletException e) {
-			System.out.println("ServletException");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.out.println("IOException");
-			e.printStackTrace();
-		}
-	}
-	
-	@Path("inicializar")
-	@GET
-	@Produces(MediaType.TEXT_PLAIN)
-	public void inicializar(@QueryParam(value = "proceso") int numProceso) {
-
-		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/inicializar");
 		try {
 			dispatcher.forward(request, response);
 		} catch (ServletException e) {
