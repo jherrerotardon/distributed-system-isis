@@ -28,58 +28,51 @@ public class Ordenacion {
 	private LinkedList<Mensaje> cola;
 	private int orden;
 	private final String localhostIPv6 = "0:0:0:0:0:0:0:1";
-	
-	@Context HttpServletRequest request;
-	
-	
-	//Temporal hasta que sepamos hacer dispatcher
+
+	@Context
+	HttpServletRequest request;
+
+	// Temporal hasta que sepamos hacer dispatcher
 	@PostConstruct
 	public void inizializar() {
 		cola = new LinkedList<Mensaje>();
 		orden = 0;
 	}
-	
+
 	@Path("prueba")
 	@GET
-	//@Consumes(MediaType.APPLICATION_JSON) 
+	// @Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public String prueba(@QueryParam(value = "k") String k) {
-		
+
 		System.out.println(request.getRemoteAddr());
 		return request.getRemoteAddr();
 	}
-	
+
 	@Path("mensaje")
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON) 
-	@Produces(MediaType.APPLICATION_JSON)
-	public String mensaje(String json ,@QueryParam(value = "k") String k) {
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String mensaje(@QueryParam(value = "m") String m ,@QueryParam(value = "k") String k) {
 		String ip;
 		
 		lc1(orden);
 		//Recuperacion y modificación del mensaje antes de guardarlo en la cola
-		Mensaje mensajeRecibido = MensajeUtils.getMensajeFromJson(json);
-		mensajeRecibido.setOrden(orden);
-		mensajeRecibido.setNumPeticiones(0);
-		mensajeRecibido.setEstado(Mensaje.PROVISIONAL);
-		
-		cola.push(mensajeRecibido);
+		Mensaje mensajeCola = new Mensaje (m, k, orden, 0, Mensaje.PROVISIONAL);
+		cola.push(mensajeCola);
 		
 		//Reconversion de ipv6 a ipv4 cuando viene de localhost 
 		ip = request.getRemoteAddr().equals(localhostIPv6) ? "localhost" : request.getRemoteAddr();
 		
-		System.out.println("[Mensaje/" + ip + "]: " + " json: " + json);
+		System.out.println("[Mensaje/" + ip + "]: " + " m=" + m + " k=" + k);
 		
-		Peticion.peticionPost(ip, Peticion.PROPUESTA, MensajeUtils.getJsonFromMensaje(mensajeRecibido));
-		return json;
+		Peticion.peticionGet(ip, Peticion.PROPUESTA, "k=" + k + "&" + "orden=" + orden);
+		return "OK";
 	}
 
 	@Path("propuesta")
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON) 
-	@Produces(MediaType.APPLICATION_JSON)
-	public String propuesta() {
-		
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String propuesta(@QueryParam(value = "k") String k ,@QueryParam(value = "orden") int orden) {
 
 		return "OK";
 	}
@@ -87,11 +80,15 @@ public class Ordenacion {
 	@Path("acuerdo")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	public String acuerdo() {
-
+	public String acuerdo(@QueryParam(value = "k") String k ,@QueryParam(value = "orden")int ordenj) {
+		
+		//int ordenMensaje
+		//ordenMensaje = (ordenMensaje > ordenj) ? ordenMensaje : ordenj;
+		lc2(orden, ordenj);
+		
+		
 		return "OK";
 	}
-	
 
 	private void lc1(int orden) {
 		orden += 1;
@@ -104,5 +101,5 @@ public class Ordenacion {
 			orden = ordenj + 1;
 		}
 	}
-		
+
 }
