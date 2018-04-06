@@ -7,8 +7,7 @@ public class DatosProceso {
 	private LinkedList<Mensaje> cola;
 	private int orden;
 	
-	public DatosProceso(String[] ipServidores) {
-		this.ipServidores = ipServidores;
+	public DatosProceso() {
 		this.cola = new LinkedList<>();
 		this.orden = 0;
 	}

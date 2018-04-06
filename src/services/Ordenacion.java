@@ -27,19 +27,21 @@ public class Ordenacion {
 	ServletContext context;
 
 	@Path("mensaje")
+	@Produces(MediaType.TEXT_PLAIN)
 	@GET
-	public void mensaje(@QueryParam(value = "proceso") int numProceso){
+	public String mensaje(@QueryParam(value = "proceso") int numProceso){
 		
-		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/mensaje");
-		try {
-			dispatcher.forward(request, response);
-		} catch (ServletException e) {
-			System.out.println("ServletException");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.out.println("IOException");
-			e.printStackTrace();
-		}
+//		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/mensaje");
+//		try {
+//			dispatcher.forward(request, response);
+//		} catch (ServletException e) {
+//			System.out.println("ServletException");
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			System.out.println("IOException");
+//			e.printStackTrace();
+//		}
+		return "BEBE";
 		
 	}
 

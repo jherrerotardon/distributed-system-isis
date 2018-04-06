@@ -1,10 +1,5 @@
 package data;
 
-import java.net.URL;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -13,25 +8,20 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriBuilder;
-
-import utils.MensajeUtils;
-import utils.Peticion;
 
 @Singleton
 @Path("proceso")
 public class Proceso extends Thread {
-	private String[] ipProcesos;
-	private LinkedList<Mensaje> cola;
-	private int orden;
+	
 	private final String localhostIPv6 = "0:0:0:0:0:0:0:1";
+	protected DatosProceso datos;
+	protected Proceso hilo;
 	@Context HttpServletRequest request;
-
-	public Proceso() {
-		cola = new LinkedList<Mensaje>();
-		orden = 0;
+	
+	public Proceso (DatosProceso datos)	{
+		this.datos = datos;	
 	}
-		
+			
 	@Override
 	public void run() {
 
@@ -47,40 +37,28 @@ public class Proceso extends Thread {
 			}
 		}
 	}
-
 	
-	private void bMulticast(String[] ipProcesos, Mensaje m, String metodo) {
-
-		for (String ip : ipProcesos) {
-
-			Peticion.peticionGet(ip, metodo, "m=" + m.getContenido() + "&" + "k=" + m.getId());
-
-			try {
-				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+	
 	
 	@Path("mensaje")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String mensaje(@QueryParam(value = "m") String m ,@QueryParam(value = "k") String k) {
-		String ip;
-		
-		lc1(orden);
-		//Recuperacion y modificación del mensaje antes de guardarlo en la cola
-		Mensaje mensajeCola = new Mensaje (m, k, orden, 0, Mensaje.PROVISIONAL);
-		cola.push(mensajeCola);
-		
-		//Reconversion de ipv6 a ipv4 cuando viene de localhost 
-		ip = request.getRemoteAddr().equals(localhostIPv6) ? "localhost" : request.getRemoteAddr();
-		
-		System.out.println("[Mensaje/" + ip + "]: " + " m=" + m + " k=" + k);
-		
-		Peticion.peticionGet(ip, Peticion.PROPUESTA, "k=" + k + "&" + "orden=" + orden);
-		return "OK";
+//		String ip;
+//		
+//		lc1(datos.getOrden());
+//		//Recuperacion y modificación del mensaje antes de guardarlo en la cola
+//		Mensaje mensajeCola = new Mensaje (m, k, datos.getOrden(), 0, Mensaje.PROVISIONAL);
+//		datos.getCola().push(mensajeCola);
+//		
+//		//Reconversion de ipv6 a ipv4 cuando viene de localhost 
+//		ip = request.getRemoteAddr().equals(localhostIPv6) ? "localhost" : request.getRemoteAddr();
+//		
+//		System.out.println("[Mensaje/" + ip + "]: " + " m=" + m + " k=" + k);
+//		
+//		Peticion.peticionGet(ip, Peticion.PROPUESTA, "k=" + k + "&" + "orden=" + datos.getOrden());
+//		return "OK";
+		return m;
 	}
 
 	@Path("propuesta")
@@ -98,7 +76,7 @@ public class Proceso extends Thread {
 		
 		//int ordenMensaje
 		//ordenMensaje = (ordenMensaje > ordenj) ? ordenMensaje : ordenj;
-		lc2(orden, ordenj);
+		lc2(datos.getOrden(), ordenj);
 		
 		
 		return "OK";
@@ -115,5 +93,6 @@ public class Proceso extends Thread {
 			orden = ordenj + 1;
 		}
 	}
+		
 	
 }
