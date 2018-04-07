@@ -1,5 +1,7 @@
 package data;
 
+import java.util.Comparator;
+
 public class Mensaje {
 
 	public static final String PROVISIONAL = "PROVISIONAL";
@@ -7,21 +9,21 @@ public class Mensaje {
 	
 	private  String contenido;
 	private  String id;
-	private  int orden;
-	private  int numPeticiones;
+	private  String orden;
+	private  int numPropuestas;
 	private  String estado;
 
-	public Mensaje(long idProceso, int orden) {
+	public Mensaje(String id, int numMensaje, int idProceso) {
 		this.contenido = "P" + idProceso + " " + orden;
-		this.id = orden + "." + idProceso;
-		this.orden = orden;
+		this.id = id;
+		this.orden = numMensaje + "." + idProceso;
 	}
 
-	public Mensaje(String contenido, String id, int orden, int numPeticiones, String estado) {
+	public Mensaje(String contenido, String id, String orden, int numPeticiones, String estado) {
 		this.contenido = contenido;
 		this.id = id;
 		this.orden = orden;
-		this.numPeticiones = numPeticiones;
+		this.numPropuestas = numPeticiones;
 		this.estado = estado;
 	}
 	
@@ -33,12 +35,12 @@ public class Mensaje {
 		return id;
 	}
 
-	public int getOrden() {
+	public String getOrden() {
 		return orden;
 	}
 	
-	public int getNumPeticiones() {
-		return numPeticiones;
+	public int getNumPropuestas() {
+		return numPropuestas;
 	}
 	
 	public String getEstado() {
@@ -53,15 +55,33 @@ public class Mensaje {
 		this.id = id;
 	}
 	
-	public void setOrden(int orden) {
+	public void setOrden(String orden) {
 		this.orden = orden;
 	}
-	public void setNumPeticiones(int numPeticiones) {
-		this.numPeticiones = numPeticiones;
+	public void setNumPropuestas(int numPropuestas) {
+		this.numPropuestas = numPropuestas;
 	}
 	
 	public void setEstado(String estado) {
 		this.estado = estado;
 	}
 	
+//	public static class ComparatorMensaje implements Comparator<Mensaje>{
+//
+//		@Override
+//		public int compare(Mensaje o1, Mensaje o2) {
+//			if(o1.getOrden() < o2.getOrden()){
+//				return -1;
+//			} else if (o1.getOrden() > o2.getOrden()){
+//				return 1;
+//			} else{
+//				if(o1.getId() < o2.getId()){
+//					return -1;
+//				} else {
+//					return 1;
+//				}
+//			}
+//			
+//		}
+//	}
 }
