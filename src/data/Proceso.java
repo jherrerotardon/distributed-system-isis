@@ -1,8 +1,8 @@
 package data;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -136,11 +136,13 @@ public class Proceso extends Thread {
 		orden += 1;
 	}
 
-	private void lc2(int ordenj) {
-		if (orden > ordenj) {
+	private void lc2(String ordenj) {
+		int valorOrdenj = Integer.parseInt(ordenj.split(Pattern.quote("."))[0]);
+		
+		if (orden > valorOrdenj) {
 			orden += 1;
 		} else {
-			orden = ordenj + 1;
+			orden = valorOrdenj + 1;
 		}
 	}
 
@@ -159,7 +161,7 @@ public class Proceso extends Thread {
 		}
 	}
 
-	private void bMulticast(String k, int orden, String metodo) {
+	private void bMulticast(String k, String orden, String metodo) {
 
 		for (String ip : ipServidores) {
 
