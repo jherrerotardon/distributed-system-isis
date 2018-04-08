@@ -78,9 +78,8 @@ public class Proceso extends Thread {
 	public String inicializar(@QueryParam(value = "idproceso") int idProceso,
 			@QueryParam(value = "ips") String ips) {
 		this.idProceso = idProceso;
-
 		if (ips != null) {
-			ipServidores = ips.split("|");
+			ipServidores = ips.split("\\*");
 			for (String ip : ipServidores) {
 				System.out.println(ip);
 			}
