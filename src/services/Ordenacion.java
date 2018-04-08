@@ -26,6 +26,12 @@ public class Ordenacion {
 	@Context
 	ServletContext context;
 
+	@Path("saludo")
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String saludo() {
+		return "HOLA";
+	}
 	
 	@Path("inicializar")
 	@GET

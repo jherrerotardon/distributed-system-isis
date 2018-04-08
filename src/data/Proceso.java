@@ -2,7 +2,7 @@ package data;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.concurrent.Semaphore;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -21,12 +21,14 @@ public class Proceso extends Thread {
 
 	private final String LOCALHOSTIPV6 = "0:0:0:0:0:0:0:1";
 	private final char OFFSETASCII = 64;
+	private final int NPROCESOS = 2;
 
 	private String[] ipServidores;
 	private List<Mensaje> cola;
 	private int orden;
 	private int idProceso;
 	private Mensaje mensaje;
+	private Semaphore semaforoPreparados;
 
 	@Context
 	HttpServletRequest request;
@@ -34,12 +36,13 @@ public class Proceso extends Thread {
 	public Proceso() {
 		this.cola = new ArrayList<>();
 		this.orden = 0;
+		this.semaforoPreparados = new Semaphore(0);
 	}
 
 	@Override
 	public void run() {
 
-		for (int i = 100; i < 100; i++) {
+		for (int i = 0; i < 5; i++) {
 			String idMensaje = (char) (OFFSETASCII + idProceso) + "" + i;
 			mensaje = new Mensaje(idMensaje, idProceso, orden);
 
@@ -53,12 +56,27 @@ public class Proceso extends Thread {
 		}
 
 	}
+	
+	@Path("saludo")
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String saludo() {
+		return "HOLA";
+	}
+	
+	@Path("preparado")
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String preparado() {
+		semaforoPreparados.release();
+		return "OK";
+	}
 
 	@Path("inicializar")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String inicializar(@QueryParam(value = "idproceso") int idProceso,
-			@QueryParam(value = "proceso") String ips) {
+			@QueryParam(value = "ips") String ips) {
 		this.idProceso = idProceso;
 
 		if (ips != null) {
@@ -67,6 +85,11 @@ public class Proceso extends Thread {
 				System.out.println(ip);
 			}
 
+		}
+		try {
+			semaforoPreparados.acquire(NPROCESOS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 		this.start();
 		return "OK p: " + this.idProceso;
@@ -99,11 +122,10 @@ public class Proceso extends Thread {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
-		if(mensaje.getOrden().compareTo(ordenj) < 0) {
+		if (mensaje.getOrden().compareTo(ordenj) < 0) {
 			mensaje.setOrden(ordenj);
 		}
-		
-		
+
 		lc2(ordenj);
 		mensaje.setNumPropuestas(mensaje.getNumPropuestas() + 1);
 		if (mensaje.getNumPropuestas() == ipServidores.length * 2) {
@@ -118,17 +140,20 @@ public class Proceso extends Thread {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 
-		for (Mensaje m : cola) {
-			if (m.getId().equals(k)) {
-				mensaje = m;
-				break;
-			}
-		}
-
-		mensaje.setOrden(ordenj);
-		lc2(ordenj);
-		mensaje.setEstado(Mensaje.DEFINITIVO);
-
+//		for (Mensaje m : cola) {
+//			if (m.getId().equals(k)) {
+//				mensaje = m;
+//				break;
+//			}
+//		}
+//
+//		mensaje.setOrden(ordenj);
+//		lc2(ordenj);
+//		mensaje.setEstado(Mensaje.DEFINITIVO);
+//
+//		return "OK";
+		
+		System.out.println("proceso " + idProceso + ":   orden=" + ordenj + " k=" + k);
 		return "OK";
 	}
 
@@ -137,8 +162,8 @@ public class Proceso extends Thread {
 	}
 
 	private void lc2(String ordenj) {
-		int valorOrdenj = Integer.parseInt(ordenj.split(Pattern.quote("."))[0]);
-		
+		int valorOrdenj = Integer.parseInt(ordenj.split("\\.")[0]);
+
 		if (orden > valorOrdenj) {
 			orden += 1;
 		} else {
