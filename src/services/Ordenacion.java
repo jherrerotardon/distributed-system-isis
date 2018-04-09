@@ -49,11 +49,25 @@ public class Ordenacion {
 		}
 	}
 	
+	@Path("preparado")
+	@GET
+	public void preparado(@QueryParam(value = "proceso") int numProceso) {
+		
+		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/preparado");
+		try {
+			dispatcher.forward(request, response);
+		} catch (ServletException e) {
+			System.out.println("ServletException");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("IOException");
+			e.printStackTrace();
+		}
+	}
+	
 	@Path("mensaje")
 	@GET
 	public void mensaje(@QueryParam(value = "proceso") int numProceso){
-		
-		System.out.println(numProceso);
 		
 		RequestDispatcher dispatcher =  context.getRequestDispatcher("/proceso" + numProceso + "/proceso/mensaje");
 		try {

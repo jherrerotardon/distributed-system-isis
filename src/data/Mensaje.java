@@ -13,8 +13,8 @@ public class Mensaje {
 	private  int numPropuestas;
 	private  String estado;
 
-	public Mensaje(String id, int numMensaje, int idProceso) {
-		this.contenido = "P" + idProceso + " " + orden;
+	public Mensaje(String id,  int idProceso, int numMensaje) {
+		this.contenido = "P" + idProceso + " " + numMensaje;
 		this.id = id;
 		this.orden = numMensaje + "." + idProceso;
 	}
@@ -66,22 +66,12 @@ public class Mensaje {
 		this.estado = estado;
 	}
 	
-//	public static class ComparatorMensaje implements Comparator<Mensaje>{
-//
-//		@Override
-//		public int compare(Mensaje o1, Mensaje o2) {
-//			if(o1.getOrden() < o2.getOrden()){
-//				return -1;
-//			} else if (o1.getOrden() > o2.getOrden()){
-//				return 1;
-//			} else{
-//				if(o1.getId() < o2.getId()){
-//					return -1;
-//				} else {
-//					return 1;
-//				}
-//			}
-//			
-//		}
-//	}
+	public static class ComparatorMensaje implements Comparator<Mensaje>{
+
+		@Override
+		public int compare(Mensaje o1, Mensaje o2) {
+			return o1.getOrden().compareTo(o2.getOrden());
+			
+		}
+	}
 }

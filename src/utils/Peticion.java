@@ -11,13 +11,15 @@ public class Peticion {
 	public static final String MENSAJE = "mensaje";
 	public static final String PROPUESTA = "propuesta";
 	public static final String ACUERDO = "acuerdo";
+	public static final String PREPARADO = "preparado";
 	
 	public static String peticionGet(String ip, String metodo) {
 		String respuesta = "";
-		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/ordenacion/";
+		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/ordenacion/";
 		
 		try {
 			URL url = new URL(servicio + metodo);
+			System.out.println("url: " + url.toString());
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			
 			conn.setRequestMethod("GET");
@@ -41,10 +43,11 @@ public class Peticion {
 	//GET con argumentos
 	public static String peticionGet(String ip, String metodo, String args) {
 		String respuesta = "";
-		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/ordenacion/";
+		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/ordenacion/";
 		
 		try {
 			URL url = new URL(servicio + metodo + '?' + args);
+			System.out.println("url: " + url.toString());
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			
 			conn.setRequestMethod("GET");
@@ -68,7 +71,7 @@ public class Peticion {
 	//POST mediante json
 	public static String peticionPost(String ip, String metodo, String jsonMensaje) {
 		String respuesta = "";
-		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/ordenacion/";
+		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/ordenacion/";
 		
 		try {
 			URL url = new URL(servicio + metodo);

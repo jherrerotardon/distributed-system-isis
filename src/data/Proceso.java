@@ -1,5 +1,9 @@
 package data;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -42,7 +46,7 @@ public class Proceso extends Thread {
 	@Override
 	public void run() {
 
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < 1; i++) {
 			String idMensaje = (char) (OFFSETASCII + idProceso) + "" + i;
 			mensaje = new Mensaje(idMensaje, idProceso, orden);
 
@@ -56,14 +60,14 @@ public class Proceso extends Thread {
 		}
 
 	}
-	
+
 	@Path("saludo")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String saludo() {
 		return "HOLA";
 	}
-	
+
 	@Path("preparado")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
@@ -75,8 +79,7 @@ public class Proceso extends Thread {
 	@Path("inicializar")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	public String inicializar(@QueryParam(value = "idproceso") int idProceso,
-			@QueryParam(value = "ips") String ips) {
+	public String inicializar(@QueryParam(value = "idproceso") int idProceso, @QueryParam(value = "ips") String ips) {
 		this.idProceso = idProceso;
 		if (ips != null) {
 			ipServidores = ips.split("\\*");
@@ -85,8 +88,16 @@ public class Proceso extends Thread {
 			}
 
 		}
+
+		for (String ip : ipServidores) {
+			Peticion.peticionGet(ip, Peticion.PREPARADO, "proceso=1");
+			Peticion.peticionGet(ip, Peticion.PREPARADO, "proceso=2");
+		}
+
 		try {
+			System.out.println("antes acquire");
 			semaforoPreparados.acquire(NPROCESOS);
+			System.out.println("despues acquire");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -97,10 +108,11 @@ public class Proceso extends Thread {
 	@Path("mensaje")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	public String mensaje(@QueryParam(value = "proceso") int numProceso, @QueryParam(value = "m") String m,
+	public String mensaje(@QueryParam(value = "emisor") int emisor, @QueryParam(value = "m") String m,
 			@QueryParam(value = "k") String k) {
 		String ip;
-
+		int destinatario;
+		System.err.println("[Mensaje] Proceso " + idProceso + " mensaje: " + m);
 		lc1();
 		// Recuperacion y modificación del mensaje antes de guardarlo en la cola
 		String ordenMensaje = orden + "." + idProceso;
@@ -112,8 +124,9 @@ public class Proceso extends Thread {
 
 		System.out.println("[Mensaje/" + ip + "]: " + " m=" + m + " k=" + k);
 
+		destinatario = (emisor % 2 == 0) ? 2 : 1; // Procesos de 1 a 6, para envio deben ser 1 o 2
 		Peticion.peticionGet(ip, Peticion.PROPUESTA,
-				"proceso=" + numProceso + "&" + "k=" + k + "&" + "orden=" + ordenMensaje);
+				"proceso=" + destinatario + "&" + "k=" + k + "&" + "orden=" + ordenMensaje);
 		return "OK";
 	}
 
@@ -121,14 +134,18 @@ public class Proceso extends Thread {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
+		System.err.println("[Propuesta entrada] Proceso " + idProceso + " mensaje: " + k);
 		if (mensaje.getOrden().compareTo(ordenj) < 0) {
 			mensaje.setOrden(ordenj);
 		}
 
 		lc2(ordenj);
 		mensaje.setNumPropuestas(mensaje.getNumPropuestas() + 1);
+		System.out.println("Proceso " + idProceso + "Mensaje <" + k + "> numPropuestas: " + mensaje.getNumPropuestas());
 		if (mensaje.getNumPropuestas() == ipServidores.length * 2) {
 			mensaje.setEstado(Mensaje.DEFINITIVO);
+			System.err.println("[Propuesta salida] Proceso " + idProceso + " idMensaje: " + k + " <Contenido> "
+					+ mensaje.getContenido());
 			bMulticast(k, mensaje.getOrden(), Peticion.ACUERDO);
 		}
 		return "OK";
@@ -138,21 +155,47 @@ public class Proceso extends Thread {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
+		System.err.println("[Acuerdo] Proceso " + idProceso + " mensaje: " + k);
+		// cola.get(k)
+		for (Mensaje m : cola) {
+			if (m.getId().equals(k)) {
+				mensaje = m;
+				break;
+			}
+		}
 
-//		for (Mensaje m : cola) {
-//			if (m.getId().equals(k)) {
-//				mensaje = m;
-//				break;
-//			}
-//		}
-//
-//		mensaje.setOrden(ordenj);
-//		lc2(ordenj);
-//		mensaje.setEstado(Mensaje.DEFINITIVO);
-//
-//		return "OK";
-		
-		System.out.println("proceso " + idProceso + ":   orden=" + ordenj + " k=" + k);
+		mensaje.setOrden(ordenj);
+		lc2(ordenj);
+		mensaje.setEstado(Mensaje.DEFINITIVO);
+
+		cola.sort(new Mensaje.ComparatorMensaje());
+		if (!cola.isEmpty()) {
+			mensaje = cola.get(0);
+
+			while (mensaje.getEstado().compareTo(Mensaje.DEFINITIVO) == 0) {
+				// Escritura mensaje en fichero
+				try {
+					java.nio.file.Path ficheroLog = Paths
+							.get("C:\\Users\\Jorge\\git\\PracticaObligatoriaISIS\\proceso" + idProceso + ".log");
+					if (!Files.exists(ficheroLog)) {
+						Files.createFile(ficheroLog);
+					}
+					Files.write(ficheroLog, ("[" + idProceso + "]: " + k + " " + ordenj + "\n").getBytes(),
+							StandardOpenOption.APPEND);
+
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				cola.remove(0);
+				if (cola.isEmpty()) {
+					break;
+				}
+				mensaje = cola.get(0);
+			}
+		}
+
 		return "OK";
 	}
 
@@ -174,8 +217,10 @@ public class Proceso extends Thread {
 
 		for (String ip : ipServidores) {
 
-			Peticion.peticionGet(ip, metodo, "proceso=1&" + "m=" + m.getContenido() + "&" + "k=" + m.getId());
-			Peticion.peticionGet(ip, metodo, "proceso=2&" + "m=" + m.getContenido() + "&" + "k=" + m.getId());
+			Peticion.peticionGet(ip, metodo, "proceso=1" + "&emisor=" + idProceso + "&m="
+					+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
+			Peticion.peticionGet(ip, metodo, "proceso=2" + "&emisor=" + idProceso + "&m="
+					+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
 
 			try {
 				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
