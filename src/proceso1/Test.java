@@ -1,9 +1,12 @@
 package proceso1;
 
+import java.util.concurrent.Semaphore;
+
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 @Singleton
@@ -12,13 +15,15 @@ public class Test extends Thread{
 
 	private String aux;
 	private int var = 0;
+	private Semaphore sem;
 	
 	
 	public Test() {
 		aux = "mierda0";
-		System.err.println("const " + aux);
+		//System.err.println("const " + aux);
 		var++;
-		this.start();
+		sem = new Semaphore(0);
+		//this.start();
 	}
 	
 	@Override
@@ -39,8 +44,16 @@ public class Test extends Thread{
 	@Path("hola")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	public String hola() {
+	public String hola(@QueryParam("parado") int parado) {
 		
-		return aux;
+		if(parado == 1) {
+			try {
+				sem.acquire();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return "Retorno";
 	}
 }

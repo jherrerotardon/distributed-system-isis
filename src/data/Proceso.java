@@ -33,6 +33,7 @@ public class Proceso extends Thread {
 	private int idProceso;
 	private Mensaje mensaje;
 	private Semaphore semaforoPreparados;
+	private Semaphore semaforoPropuesta;
 
 	@Context
 	HttpServletRequest request;
@@ -41,6 +42,7 @@ public class Proceso extends Thread {
 		this.cola = new ArrayList<>();
 		this.orden = 0;
 		this.semaforoPreparados = new Semaphore(0);
+		this.semaforoPropuesta = new Semaphore(1);
 	}
 
 	@Override
@@ -135,6 +137,13 @@ public class Proceso extends Thread {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		System.err.println("[Propuesta entrada] Proceso " + idProceso + " mensaje: " + k);
+		
+		try {
+			semaforoPropuesta.acquire();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 		if (mensaje.getOrden().compareTo(ordenj) < 0) {
 			mensaje.setOrden(ordenj);
 		}
@@ -146,7 +155,11 @@ public class Proceso extends Thread {
 			mensaje.setEstado(Mensaje.DEFINITIVO);
 			System.err.println("[Propuesta salida] Proceso " + idProceso + " idMensaje: " + k + " <Contenido> "
 					+ mensaje.getContenido());
-			bMulticast(k, mensaje.getOrden(), Peticion.ACUERDO);
+			String ordenPropuesta = mensaje.getOrden();
+			semaforoPropuesta.release();
+			bMulticast(k, ordenPropuesta, Peticion.ACUERDO);
+		} else {
+			semaforoPropuesta.release();
 		}
 		return "OK";
 	}
@@ -157,26 +170,28 @@ public class Proceso extends Thread {
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		System.err.println("[Acuerdo] Proceso " + idProceso + " mensaje: " + k);
 		// cola.get(k)
+		Mensaje mensajeAcuerdo = null;
 		for (Mensaje m : cola) {
 			if (m.getId().equals(k)) {
-				mensaje = m;
+				 mensajeAcuerdo = m;
 				break;
 			}
 		}
 
-		mensaje.setOrden(ordenj);
+		mensajeAcuerdo.setOrden(ordenj);
 		lc2(ordenj);
-		mensaje.setEstado(Mensaje.DEFINITIVO);
+		mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
 
 		cola.sort(new Mensaje.ComparatorMensaje());
 		if (!cola.isEmpty()) {
-			mensaje = cola.get(0);
+			mensajeAcuerdo = cola.get(0);
 
-			while (mensaje.getEstado().compareTo(Mensaje.DEFINITIVO) == 0) {
+			while (mensajeAcuerdo.getEstado().compareTo(Mensaje.DEFINITIVO) == 0) {
 				// Escritura mensaje en fichero
 				try {
+					System.err.println("[Acuerdo] idProceso: " + idProceso);
 					java.nio.file.Path ficheroLog = Paths
-							.get("C:\\Users\\Jorge\\git\\PracticaObligatoriaISIS\\proceso" + idProceso + ".log");
+							.get("proceso" + idProceso + ".log");
 					if (!Files.exists(ficheroLog)) {
 						Files.createFile(ficheroLog);
 					}
@@ -184,7 +199,6 @@ public class Proceso extends Thread {
 							StandardOpenOption.APPEND);
 
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
@@ -192,18 +206,18 @@ public class Proceso extends Thread {
 				if (cola.isEmpty()) {
 					break;
 				}
-				mensaje = cola.get(0);
+				mensajeAcuerdo = cola.get(0);
 			}
 		}
 
 		return "OK";
 	}
 
-	private void lc1() {
+	synchronized private void lc1() {
 		orden += 1;
 	}
 
-	private void lc2(String ordenj) {
+	synchronized private void lc2(String ordenj) {
 		int valorOrdenj = Integer.parseInt(ordenj.split("\\.")[0]);
 
 		if (orden > valorOrdenj) {
