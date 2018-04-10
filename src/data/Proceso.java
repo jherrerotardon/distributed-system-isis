@@ -26,7 +26,6 @@ public class Proceso extends Thread {
 
 	private final String LOCALHOSTIPV6 = "0:0:0:0:0:0:0:1";
 	private final char OFFSETASCII = 64;
-	private final int NPROCESOS = 2;
 
 	private String[] ipServidores;
 	private List<Mensaje> cola;
@@ -50,7 +49,7 @@ public class Proceso extends Thread {
 	@Override
 	public void run() {
 
-		for (int i = 1; i <= 100; i++) {
+		for (int i = 1; i <= 50; i++) {
 			String idMensaje = (char) (OFFSETASCII + idProceso) + "" + i;
 			mensaje = new Mensaje(idMensaje, idProceso, orden);
 
@@ -110,7 +109,7 @@ public class Proceso extends Thread {
 
 		try {
 			System.out.println("antes acquire");
-			semaforoPreparados.acquire(NPROCESOS);
+			semaforoPreparados.acquire(ipServidores.length * 2);
 			System.out.println("despues acquire");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -127,7 +126,9 @@ public class Proceso extends Thread {
 		String ip;
 		int destinatario;
 		System.err.println("[Mensaje] Proceso " + idProceso + " mensaje: " + m);
-		lc1();
+		synchronized (this.getClass()) {
+			lc1();
+		}
 		// Recuperacion y modificación del mensaje antes de guardarlo en la cola
 		String ordenMensaje = orden + "." + idProceso;
 		Mensaje mensajeCola = new Mensaje(m, k, ordenMensaje, 0, Mensaje.PROVISIONAL);
@@ -160,7 +161,10 @@ public class Proceso extends Thread {
 			mensaje.setOrden(ordenj);
 		}
 
-		lc2(ordenj);
+		synchronized (this.getClass()) {
+			lc2(ordenj);
+		}
+
 		mensaje.setNumPropuestas(mensaje.getNumPropuestas() + 1);
 		System.out.println("Proceso " + idProceso + "Mensaje <" + k + "> numPropuestas: " + mensaje.getNumPropuestas());
 		if (mensaje.getNumPropuestas() == ipServidores.length * 2) {
@@ -191,7 +195,11 @@ public class Proceso extends Thread {
 		}
 
 		mensajeAcuerdo.setOrden(ordenj);
-		lc2(ordenj);
+		
+		synchronized (this.getClass()) {
+			lc2(ordenj);
+		}
+		
 		mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
 
 		cola.sort(new Mensaje.ComparatorMensaje());
@@ -204,8 +212,7 @@ public class Proceso extends Thread {
 					System.err.println("[Acuerdo] idProceso: " + idProceso);
 
 					Files.write(Paths.get(ficheroLog.getPath()),
-							(mensajeAcuerdo.getId() + " " + mensajeAcuerdo.getOrden() + "\n")
-									.getBytes(),
+							(mensajeAcuerdo.getId() + " " + mensajeAcuerdo.getOrden() + "\n").getBytes(),
 							StandardOpenOption.APPEND);
 
 				} catch (IOException e) {
@@ -223,11 +230,11 @@ public class Proceso extends Thread {
 		return "OK";
 	}
 
-	synchronized private void lc1() {
+	private void lc1() {
 		orden += 1;
 	}
 
-	synchronized private void lc2(String ordenj) {
+	private void lc2(String ordenj) {
 		int valorOrdenj = Integer.parseInt(ordenj.split("\\.")[0]);
 
 		if (orden > valorOrdenj) {
