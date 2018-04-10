@@ -1,5 +1,6 @@
 package data;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -34,6 +35,7 @@ public class Proceso extends Thread {
 	private Mensaje mensaje;
 	private Semaphore semaforoPreparados;
 	private Semaphore semaforoPropuesta;
+	private File ficheroLog;
 
 	@Context
 	HttpServletRequest request;
@@ -48,7 +50,7 @@ public class Proceso extends Thread {
 	@Override
 	public void run() {
 
-		for (int i = 0; i < 1; i++) {
+		for (int i = 1; i <= 100; i++) {
 			String idMensaje = (char) (OFFSETASCII + idProceso) + "" + i;
 			mensaje = new Mensaje(idMensaje, idProceso, orden);
 
@@ -97,6 +99,16 @@ public class Proceso extends Thread {
 		}
 
 		try {
+			ficheroLog = new File("proceso" + idProceso + ".log");
+			if (ficheroLog.exists()) {
+				ficheroLog.delete();
+			}
+			ficheroLog.createNewFile();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+
+		try {
 			System.out.println("antes acquire");
 			semaforoPreparados.acquire(NPROCESOS);
 			System.out.println("despues acquire");
@@ -137,13 +149,13 @@ public class Proceso extends Thread {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		System.err.println("[Propuesta entrada] Proceso " + idProceso + " mensaje: " + k);
-		
+
 		try {
 			semaforoPropuesta.acquire();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 		if (mensaje.getOrden().compareTo(ordenj) < 0) {
 			mensaje.setOrden(ordenj);
 		}
@@ -173,7 +185,7 @@ public class Proceso extends Thread {
 		Mensaje mensajeAcuerdo = null;
 		for (Mensaje m : cola) {
 			if (m.getId().equals(k)) {
-				 mensajeAcuerdo = m;
+				mensajeAcuerdo = m;
 				break;
 			}
 		}
@@ -190,12 +202,10 @@ public class Proceso extends Thread {
 				// Escritura mensaje en fichero
 				try {
 					System.err.println("[Acuerdo] idProceso: " + idProceso);
-					java.nio.file.Path ficheroLog = Paths
-							.get("proceso" + idProceso + ".log");
-					if (!Files.exists(ficheroLog)) {
-						Files.createFile(ficheroLog);
-					}
-					Files.write(ficheroLog, ("[" + idProceso + "]: " + k + " " + ordenj + "\n").getBytes(),
+
+					Files.write(Paths.get(ficheroLog.getPath()),
+							(mensajeAcuerdo.getId() + " " + mensajeAcuerdo.getOrden() + "\n")
+									.getBytes(),
 							StandardOpenOption.APPEND);
 
 				} catch (IOException e) {
