@@ -104,13 +104,13 @@ public class Proceso extends Thread {
 				ficheroLog.delete();
 			}
 			ficheroLog.createNewFile();
-			
+
 			log = new File(System.getProperty("user.home") + File.separator + "acuerdo.log");
 			if (log.exists()) {
 				log.delete();
 			}
 			log.createNewFile();
-			
+
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -194,14 +194,7 @@ public class Proceso extends Thread {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		System.err.println("[Acuerdo] Proceso " + idProceso + " mensaje: " + k);
-		/***************************************/
-		String aux = "";
-		for (Mensaje mensaje : cola) {
-			aux += mensaje.getId() + " " + mensaje.getOrden() + "\n";
-		}
-		log(aux + "********************************\n");
 		
-		/****************************************/
 		// cola.get(k)
 		Mensaje mensajeAcuerdo = null;
 		for (Mensaje m : cola) {
@@ -220,6 +213,14 @@ public class Proceso extends Thread {
 		mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
 
 		cola.sort(new Mensaje.ComparatorMensaje());
+		/***************************************/
+		String aux = "";
+		for (Mensaje mensaje : cola) {
+			aux += mensaje.getId() + " " + mensaje.getOrden() + "\n";
+		}
+		log(aux + "**************" + idProceso + "******************\n");
+
+		/****************************************/
 		if (!cola.isEmpty()) {
 			mensajeAcuerdo = cola.get(0);
 
@@ -295,8 +296,7 @@ public class Proceso extends Thread {
 
 	private void log(String texto) {
 		try {
-			
-			
+
 			Files.write(Paths.get(log.getPath()), texto.getBytes(), StandardOpenOption.APPEND);
 
 		} catch (Exception e) {
