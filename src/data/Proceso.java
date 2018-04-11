@@ -194,7 +194,7 @@ public class Proceso extends Thread {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		System.err.println("[Acuerdo] Proceso " + idProceso + " mensaje: " + k);
-		
+
 		// cola.get(k)
 		Mensaje mensajeAcuerdo = null;
 		for (Mensaje m : cola) {
@@ -208,19 +208,19 @@ public class Proceso extends Thread {
 
 		synchronized (this.getClass()) {
 			lc2(ordenj);
+
+			mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
+
+			cola.sort(new Mensaje.ComparatorMensaje());
+			/***************************************/
+			String aux = "";
+			for (Mensaje mensaje : cola) {
+				aux += mensaje.getId() + " " + mensaje.getOrden() + " " + mensaje.getEstado() + "\n";
+			}
+			log(aux + "**************" + idProceso + "******************\n");
+
+			/****************************************/
 		}
-
-		mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
-
-		cola.sort(new Mensaje.ComparatorMensaje());
-		/***************************************/
-		String aux = "";
-		for (Mensaje mensaje : cola) {
-			aux += mensaje.getId() + " " + mensaje.getOrden() + " " + mensaje.getEstado() + "\n";
-		}
-		log(aux + "**************" + idProceso + "******************\n");
-
-		/****************************************/
 		if (!cola.isEmpty()) {
 			mensajeAcuerdo = cola.get(0);
 
