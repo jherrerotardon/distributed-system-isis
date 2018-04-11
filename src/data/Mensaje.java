@@ -69,8 +69,33 @@ public class Mensaje {
 	public static class ComparatorMensaje implements Comparator<Mensaje>{
 
 		@Override
-		public int compare(Mensaje o1, Mensaje o2) {
-			return o1.getOrden().compareTo(o2.getOrden());
+		public int compare(Mensaje m1, Mensaje m2) {
+			String[] camposM1 = m1.getOrden().split("\\.");
+			String[] camposM2 = m2.getOrden().split("\\.");
+			
+			int ordenM1 = Integer.parseInt(camposM1[0]);
+			int ordenM2 = Integer.parseInt(camposM2[0]);
+			
+			if (ordenM1 < ordenM2) {
+				return -1;
+			}
+			else if (ordenM1 > ordenM2) {
+				return 1;
+			}
+			else {
+				int idProcesoM1 = Integer.parseInt(camposM1[1]);
+				int idProcesoM2 = Integer.parseInt(camposM2[1]);
+				
+				if (idProcesoM1 < idProcesoM2) {
+					return -1;
+				}
+				else if (idProcesoM1 > idProcesoM2) {
+					return 1;
+				}
+				else {
+					return 0;
+				}
+			}
 			
 		}
 	}
