@@ -35,6 +35,7 @@ public class Proceso extends Thread {
 	private Semaphore semaforoPreparados;
 	private Semaphore semaforoPropuesta;
 	private File ficheroLog;
+	private File log;
 
 	@Context
 	HttpServletRequest request;
@@ -103,6 +104,13 @@ public class Proceso extends Thread {
 				ficheroLog.delete();
 			}
 			ficheroLog.createNewFile();
+			
+			log = new File(System.getProperty("user.home") + File.separator + "acuerdo.log");
+			if (log.exists()) {
+				log.delete();
+			}
+			log.createNewFile();
+			
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -139,7 +147,8 @@ public class Proceso extends Thread {
 
 		System.out.println("[Mensaje/" + ip + "]: " + " m=" + m + " k=" + k);
 
-		destinatario = (emisor % 2 == 0) ? 2 : 1; // Procesos de 1 a 6, para envio deben ser 1 o 2
+		destinatario = (emisor % 2 == 0) ? 2 : 1; // Procesos de 1 a 6, para
+													// envio deben ser 1 o 2
 		Peticion.peticionGet(ip, Peticion.PROPUESTA,
 				"proceso=" + destinatario + "&" + "k=" + k + "&" + "orden=" + ordenMensaje);
 		return "OK";
@@ -185,6 +194,14 @@ public class Proceso extends Thread {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		System.err.println("[Acuerdo] Proceso " + idProceso + " mensaje: " + k);
+		/***************************************/
+		String aux = "";
+		for (Mensaje mensaje : cola) {
+			aux += mensaje.getId() + " " + mensaje.getOrden() + "\n";
+		}
+		log(aux + "********************************\n");
+		
+		/****************************************/
 		// cola.get(k)
 		Mensaje mensajeAcuerdo = null;
 		for (Mensaje m : cola) {
@@ -195,11 +212,11 @@ public class Proceso extends Thread {
 		}
 
 		mensajeAcuerdo.setOrden(ordenj);
-		
+
 		synchronized (this.getClass()) {
 			lc2(ordenj);
 		}
-		
+
 		mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
 
 		cola.sort(new Mensaje.ComparatorMensaje());
@@ -273,6 +290,18 @@ public class Proceso extends Thread {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+
+	private void log(String texto) {
+		try {
+			
+			
+			Files.write(Paths.get(log.getPath()), texto.getBytes(), StandardOpenOption.APPEND);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			// TODO: handle exception
 		}
 	}
 }
