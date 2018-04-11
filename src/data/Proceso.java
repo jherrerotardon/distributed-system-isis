@@ -98,7 +98,7 @@ public class Proceso extends Thread {
 		}
 
 		try {
-			ficheroLog = new File("proceso" + idProceso + ".log");
+			ficheroLog = new File(System.getProperty("user.home") + File.separator + "proceso" + idProceso + ".log");
 			if (ficheroLog.exists()) {
 				ficheroLog.delete();
 			}
@@ -129,7 +129,7 @@ public class Proceso extends Thread {
 		synchronized (this.getClass()) {
 			lc1();
 		}
-		// Recuperacion y modificación del mensaje antes de guardarlo en la cola
+		// Recuperacion y modificaciï¿½n del mensaje antes de guardarlo en la cola
 		String ordenMensaje = orden + "." + idProceso;
 		Mensaje mensajeCola = new Mensaje(m, k, ordenMensaje, 0, Mensaje.PROVISIONAL);
 		cola.add(mensajeCola);

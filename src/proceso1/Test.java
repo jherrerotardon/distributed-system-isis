@@ -1,5 +1,6 @@
 package proceso1;
 
+import java.io.File;
 import java.util.concurrent.Semaphore;
 
 import javax.inject.Singleton;
@@ -24,6 +25,9 @@ public class Test extends Thread{
 		var++;
 		sem = new Semaphore(0);
 		//this.start();
+	}
+	public static void main(String[] args) {
+		System.out.println(System.getProperty("user.home") + File.separator + "proceso");
 	}
 	
 	@Override
