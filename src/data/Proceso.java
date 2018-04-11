@@ -169,11 +169,13 @@ public class Proceso extends Thread {
 		if (mensaje.getOrden().compareTo(ordenj) < 0) {
 			mensaje.setOrden(ordenj);
 		}
-
+		/**************************************/
+		log("Soy " + idProceso + "recibo propuesta con orden " + ordenj);
+		/**************************************/
 		synchronized (this.getClass()) {
 			lc2(ordenj);
 		}
-
+		
 		mensaje.setNumPropuestas(mensaje.getNumPropuestas() + 1);
 		System.out.println("Proceso " + idProceso + "Mensaje <" + k + "> numPropuestas: " + mensaje.getNumPropuestas());
 		if (mensaje.getNumPropuestas() == ipServidores.length * 2) {
@@ -181,6 +183,9 @@ public class Proceso extends Thread {
 			System.err.println("[Propuesta salida] Proceso " + idProceso + " idMensaje: " + k + " <Contenido> "
 					+ mensaje.getContenido());
 			String ordenPropuesta = mensaje.getOrden();
+			/**************************************/
+			log("Soy " + idProceso + "Estoy para hacer multicast con orden " + ordenPropuesta);
+			/**************************************/
 			semaforoPropuesta.release();
 			bMulticast(k, ordenPropuesta, Peticion.ACUERDO);
 		} else {
