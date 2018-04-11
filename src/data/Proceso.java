@@ -170,7 +170,7 @@ public class Proceso extends Thread {
 			mensaje.setOrden(ordenj);
 		}
 		/**************************************/
-		log("Soy " + idProceso + "recibo propuesta con orden " + ordenj);
+		log("Soy " + idProceso + "recibo propuesta con orden " + ordenj + "\n");
 		/**************************************/
 		synchronized (this.getClass()) {
 			lc2(ordenj);
@@ -184,7 +184,7 @@ public class Proceso extends Thread {
 					+ mensaje.getContenido());
 			String ordenPropuesta = mensaje.getOrden();
 			/**************************************/
-			log("Soy " + idProceso + "Estoy para hacer multicast con orden " + ordenPropuesta);
+			log("Soy " + idProceso + "Estoy para hacer multicast con orden " + ordenPropuesta + "\n");
 			/**************************************/
 			semaforoPropuesta.release();
 			bMulticast(k, ordenPropuesta, Peticion.ACUERDO);
