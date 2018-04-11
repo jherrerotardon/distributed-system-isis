@@ -216,7 +216,7 @@ public class Proceso extends Thread {
 		/***************************************/
 		String aux = "";
 		for (Mensaje mensaje : cola) {
-			aux += mensaje.getId() + " " + mensaje.getOrden() + "\n";
+			aux += mensaje.getId() + " " + mensaje.getOrden() + " " + mensaje.getEstado() + "\n";
 		}
 		log(aux + "**************" + idProceso + "******************\n");
 
