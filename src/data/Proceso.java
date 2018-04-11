@@ -165,8 +165,8 @@ public class Proceso extends Thread {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
-		if (mensaje.getOrden().compareTo(ordenj) < 0) {
+		
+		if (Mensaje.ComparatorMensaje.compareOrden(mensaje.getOrden(), ordenj) < 0) {
 			mensaje.setOrden(ordenj);
 		}
 		/**************************************/

@@ -70,8 +70,16 @@ public class Mensaje {
 
 		@Override
 		public int compare(Mensaje m1, Mensaje m2) {
-			String[] camposM1 = m1.getOrden().split("\\.");
-			String[] camposM2 = m2.getOrden().split("\\.");
+			String orden1 = m1.getOrden();
+			String orden2 = m2.getOrden();
+			
+			return compareOrden(orden1, orden2);
+			
+		}
+		
+		public static int compareOrden(String o1, String o2) {
+			String[] camposM1 = o1.split("\\.");
+			String[] camposM2 = o2.split("\\.");
 			
 			int ordenM1 = Integer.parseInt(camposM1[0]);
 			int ordenM2 = Integer.parseInt(camposM2[0]);
@@ -96,7 +104,6 @@ public class Mensaje {
 					return 0;
 				}
 			}
-			
 		}
 	}
 }
