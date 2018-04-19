@@ -16,8 +16,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 @Singleton
-@Path("ordenacion")
-public class Ordenacion {
+@Path("dispatcher")
+public class Dispatcher {
 
 	@Context
 	HttpServletRequest request;

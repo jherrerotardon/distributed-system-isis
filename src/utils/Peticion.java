@@ -15,7 +15,7 @@ public class Peticion {
 	
 	public static String peticionGet(String ip, String metodo) {
 		String respuesta = "";
-		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/ordenacion/";
+		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/dispatcher/";
 		
 		try {
 			URL url = new URL(servicio + metodo);
@@ -43,7 +43,7 @@ public class Peticion {
 	//GET con argumentos
 	public static String peticionGet(String ip, String metodo, String args) {
 		String respuesta = "";
-		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/ordenacion/";
+		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/dispatcher/";
 		
 		try {
 			URL url = new URL(servicio + metodo + '?' + args);
@@ -71,7 +71,7 @@ public class Peticion {
 	//POST mediante json
 	public static String peticionPost(String ip, String metodo, String jsonMensaje) {
 		String respuesta = "";
-		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/ordenacion/";
+		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/dispatcher/";
 		
 		try {
 			URL url = new URL(servicio + metodo);

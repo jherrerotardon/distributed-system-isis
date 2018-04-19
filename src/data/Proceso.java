@@ -27,7 +27,7 @@ public class Proceso extends Thread {
 	private final String LOCALHOSTIPV6 = "0:0:0:0:0:0:0:1";
 	private final char OFFSETASCII = 64;
 
-	private String[] ipServidores;
+	private List<String> ipServidores;
 	private List<Mensaje> cola;
 	private int orden;
 	private int idProceso;
@@ -45,6 +45,8 @@ public class Proceso extends Thread {
 		this.orden = 0;
 		this.semaforoPreparados = new Semaphore(0);
 		this.semaforoPropuesta = new Semaphore(1);
+		this.ipServidores = new ArrayList<>();
+		this.ipServidores.add("localhost");
 	}
 
 	@Override
@@ -62,7 +64,6 @@ public class Proceso extends Thread {
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	@Path("saludo")
@@ -84,12 +85,16 @@ public class Proceso extends Thread {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String inicializar(@QueryParam(value = "idproceso") int idProceso, @QueryParam(value = "ips") String ips) {
+		String[] ipParams;
 		this.idProceso = idProceso;
 		if (ips != null) {
-			ipServidores = ips.split("\\*");
-			for (String ip : ipServidores) {
-				System.out.println(ip);
-			}
+			ipParams = ips.split("\\*");
+			
+		for (String ip : ipParams) {
+			this.ipServidores.add(ip);
+//			System.out.println(ip)
+		}
+
 
 		}
 
@@ -117,7 +122,7 @@ public class Proceso extends Thread {
 
 		try {
 			System.out.println("antes acquire");
-			semaforoPreparados.acquire(ipServidores.length * 2);
+			semaforoPreparados.acquire(ipServidores.size() * 2);
 			System.out.println("despues acquire");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -178,7 +183,7 @@ public class Proceso extends Thread {
 		
 		mensaje.setNumPropuestas(mensaje.getNumPropuestas() + 1);
 		System.out.println("Proceso " + idProceso + "Mensaje <" + k + "> numPropuestas: " + mensaje.getNumPropuestas());
-		if (mensaje.getNumPropuestas() == ipServidores.length * 2) {
+		if (mensaje.getNumPropuestas() == ipServidores.size() * 2) {
 			mensaje.setEstado(Mensaje.DEFINITIVO);
 			System.err.println("[Propuesta salida] Proceso " + idProceso + " idMensaje: " + k + " <Contenido> "
 					+ mensaje.getContenido());
