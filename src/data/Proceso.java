@@ -52,10 +52,10 @@ public class Proceso extends Thread {
 	@Override
 	public void run() {
 
-		for (int i = 1; i <= 50; i++) {
+		for (int i = 1; i <= 20; i++) {
 			String idMensaje = (char) (OFFSETASCII + idProceso) + "" + i;
 			mensaje = new Mensaje(idMensaje, idProceso, orden);
-
+			log("[Run/" + mensaje.getId() + "] Envio " + mensaje.getOrden());
 			bMulticast(mensaje, Peticion.MENSAJE);
 
 			try {
@@ -89,18 +89,33 @@ public class Proceso extends Thread {
 		this.idProceso = idProceso;
 		if (ips != null) {
 			ipParams = ips.split("\\*");
-			
-		for (String ip : ipParams) {
-			this.ipServidores.add(ip);
-//			System.out.println(ip)
-		}
 
+			for (String ip : ipParams) {
+				this.ipServidores.add(ip);
+				// System.out.println(ip)
+			}
 
 		}
 
 		for (String ip : ipServidores) {
-			Peticion.peticionGet(ip, Peticion.PREPARADO, "proceso=1");
-			Peticion.peticionGet(ip, Peticion.PREPARADO, "proceso=2");
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					Peticion.peticionGet(ip, Peticion.PREPARADO, "proceso=1");
+				}
+			}).start();
+			
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					Peticion.peticionGet(ip, Peticion.PREPARADO, "proceso=2");
+				}
+			}).start();
+			
+			
+			
 		}
 
 		try {
@@ -110,7 +125,7 @@ public class Proceso extends Thread {
 			}
 			ficheroLog.createNewFile();
 
-			log = new File(System.getProperty("user.home") + File.separator + "acuerdo.log");
+			log = new File(System.getProperty("user.home") + File.separator + "debug" + idProceso + ".log");
 			if (log.exists()) {
 				log.delete();
 			}
@@ -154,8 +169,17 @@ public class Proceso extends Thread {
 
 		destinatario = (emisor % 2 == 0) ? 2 : 1; // Procesos de 1 a 6, para
 													// envio deben ser 1 o 2
-		Peticion.peticionGet(ip, Peticion.PROPUESTA,
-				"proceso=" + destinatario + "&" + "k=" + k + "&" + "orden=" + ordenMensaje);
+		log("[Mensaje/" + k + " " + mensajeCola.getOrden() + "] para " + destinatario + "\n");
+		
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				Peticion.peticionGet(ip, Peticion.PROPUESTA,
+						"proceso=" + destinatario + "&" + "k=" + k + "&" + "orden=" + ordenMensaje);
+			}
+		}).start();
+		
 		return "OK";
 	}
 
@@ -163,35 +187,30 @@ public class Proceso extends Thread {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
-		System.err.println("[Propuesta entrada] Proceso " + idProceso + " mensaje: " + k);
+
+		log("[Propuesta/" + k + "] " + mensaje.getOrden() + "\n");
 
 		try {
 			semaforoPropuesta.acquire();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 		if (Mensaje.ComparatorMensaje.compareOrden(mensaje.getOrden(), ordenj) < 0) {
 			mensaje.setOrden(ordenj);
 		}
-		/**************************************/
-		log("Soy " + idProceso + "recibo propuesta con orden " + ordenj + "\n");
-		/**************************************/
+
 		synchronized (this.getClass()) {
 			lc2(ordenj);
 		}
-		
+
 		mensaje.setNumPropuestas(mensaje.getNumPropuestas() + 1);
-		System.out.println("Proceso " + idProceso + "Mensaje <" + k + "> numPropuestas: " + mensaje.getNumPropuestas());
 		if (mensaje.getNumPropuestas() == ipServidores.size() * 2) {
 			mensaje.setEstado(Mensaje.DEFINITIVO);
-			System.err.println("[Propuesta salida] Proceso " + idProceso + " idMensaje: " + k + " <Contenido> "
-					+ mensaje.getContenido());
 			String ordenPropuesta = mensaje.getOrden();
-			/**************************************/
-			log("Soy " + idProceso + "Estoy para hacer multicast con orden " + ordenPropuesta + "\n");
-			/**************************************/
+
 			semaforoPropuesta.release();
+
 			bMulticast(k, ordenPropuesta, Peticion.ACUERDO);
 		} else {
 			semaforoPropuesta.release();
@@ -222,15 +241,19 @@ public class Proceso extends Thread {
 			mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
 
 			cola.sort(new Mensaje.ComparatorMensaje());
-			/***************************************/
-			String aux = "";
-			for (Mensaje mensaje : cola) {
-				aux += mensaje.getId() + " " + mensaje.getOrden() + " " + mensaje.getEstado() + "\n";
-			}
-			log(aux + "**************" + idProceso + "******************\n");
-
-			/****************************************/
 		}
+
+		log("[Acuerdo/" + mensaje.getId() + " " + mensaje.getOrden() + "]\n");
+
+		/***************************************/
+		String aux = "";
+		for (Mensaje mensaje : cola) {
+			aux += mensaje.getId() + " " + mensaje.getOrden() + " " + mensaje.getEstado() + "\n";
+		}
+		log(aux + "**************" + idProceso + "******************\n");
+
+		/****************************************/
+		
 		if (!cola.isEmpty()) {
 			mensajeAcuerdo = cola.get(0);
 
@@ -275,11 +298,24 @@ public class Proceso extends Thread {
 	private void bMulticast(Mensaje m, String metodo) {
 
 		for (String ip : ipServidores) {
+			new Thread(new Runnable() {
 
-			Peticion.peticionGet(ip, metodo, "proceso=1" + "&emisor=" + idProceso + "&m="
-					+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
-			Peticion.peticionGet(ip, metodo, "proceso=2" + "&emisor=" + idProceso + "&m="
-					+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
+				@Override
+				public void run() {
+					Peticion.peticionGet(ip, metodo, "proceso=1" + "&emisor=" + idProceso + "&m="
+							+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
+				}
+			}).start();
+			
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					Peticion.peticionGet(ip, metodo, "proceso=2" + "&emisor=" + idProceso + "&m="
+							+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
+				}
+			}).start();
+			
 
 			try {
 				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
@@ -292,9 +328,21 @@ public class Proceso extends Thread {
 	private void bMulticast(String k, String orden, String metodo) {
 
 		for (String ip : ipServidores) {
+			new Thread(new Runnable() {
 
-			Peticion.peticionGet(ip, metodo, "proceso=1&" + "k=" + k + "&" + "orden=" + orden);
-			Peticion.peticionGet(ip, metodo, "proceso=2&" + "k=" + k + "&" + "orden=" + orden);
+				@Override
+				public void run() {
+					Peticion.peticionGet(ip, metodo, "proceso=1&" + "k=" + k + "&" + "orden=" + orden);
+				}
+			}).start();
+
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					Peticion.peticionGet(ip, metodo, "proceso=2&" + "k=" + k + "&" + "orden=" + orden);
+				}
+			}).start();
 
 			try {
 				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
