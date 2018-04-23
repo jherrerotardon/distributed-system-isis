@@ -191,9 +191,9 @@ public class Proceso extends Thread {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
-		int numMensaje = Integer.parseInt(k.substring(1));
+		int indiceMensaje = Integer.parseInt(k.substring(1)) - 1;
 
-		log("[Propuesta/" + k + "] " + mensajes[numMensaje].getOrden() + "\n");
+		log("[Propuesta/" + k + "] " + mensajes[indiceMensaje].getOrden() + "\n");
 
 		try {
 			semaforoPropuesta.acquire();
@@ -201,18 +201,18 @@ public class Proceso extends Thread {
 			e.printStackTrace();
 		}
 
-		if (Mensaje.ComparatorMensaje.compareOrden(mensajes[numMensaje].getOrden(), ordenj) < 0) {
-			mensajes[numMensaje].setOrden(ordenj);
+		if (Mensaje.ComparatorMensaje.compareOrden(mensajes[indiceMensaje].getOrden(), ordenj) < 0) {
+			mensajes[indiceMensaje].setOrden(ordenj);
 		}
 
 		synchronized (this.getClass()) {
 			lc2(ordenj);
 		}
 
-		mensajes[numMensaje].setNumPropuestas(mensajes[numMensaje].getNumPropuestas() + 1);
-		if (mensajes[numMensaje].getNumPropuestas() == ipServidores.size() * 2) {
-			mensajes[numMensaje].setEstado(Mensaje.DEFINITIVO);
-			String ordenPropuesta = mensajes[numMensaje].getOrden();
+		mensajes[indiceMensaje].setNumPropuestas(mensajes[indiceMensaje].getNumPropuestas() + 1);
+		if (mensajes[indiceMensaje].getNumPropuestas() == ipServidores.size() * 2) {
+			mensajes[indiceMensaje].setEstado(Mensaje.DEFINITIVO);
+			String ordenPropuesta = mensajes[indiceMensaje].getOrden();
 
 			semaforoPropuesta.release();
 
