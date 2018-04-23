@@ -26,12 +26,14 @@ public class Proceso extends Thread {
 
 	private final String LOCALHOSTIPV6 = "0:0:0:0:0:0:0:1";
 	private final char OFFSETASCII = 64;
+	private final int NMENSAJES = 100;
 
 	private List<String> ipServidores;
 	private List<Mensaje> cola;
 	private int orden;
 	private int idProceso;
-	private Mensaje mensaje;
+	//private Mensaje mensaje;
+	private Mensaje[] mensajes;
 	private Semaphore semaforoPreparados;
 	private Semaphore semaforoPropuesta;
 	private File ficheroLog;
@@ -48,15 +50,16 @@ public class Proceso extends Thread {
 		this.semaforoPropuesta = new Semaphore(1);
 		this.ipServidores = new ArrayList<>();
 		this.ipServidores.add("localhost");
+		this.mensajes = new Mensaje[NMENSAJES];
 	}
 
 	@Override
 	public void run() {
 
-		for (int i = 1; i <= 20; i++) {
+		for (int i = 1; i <= NMENSAJES; i++) {
 			String idMensaje = (char) (OFFSETASCII + idProceso) + "" + i;
-			mensaje = new Mensaje(idMensaje, idProceso, orden);
-			bMulticast(mensaje, Peticion.MENSAJE);
+			mensajes[i-1] = new Mensaje(idMensaje, idProceso, orden);
+			bMulticast(mensajes[i-1], Peticion.MENSAJE);
 
 			try {
 				Thread.sleep((long) ((Math.random() * 0.5 + 1.0) * 1000));
@@ -188,8 +191,9 @@ public class Proceso extends Thread {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
+		int numMensaje = Integer.parseInt(k.substring(1));
 
-		log("[Propuesta/" + k + "] " + mensaje.getOrden() + "\n");
+		log("[Propuesta/" + k + "] " + mensajes[numMensaje].getOrden() + "\n");
 
 		try {
 			semaforoPropuesta.acquire();
@@ -197,18 +201,18 @@ public class Proceso extends Thread {
 			e.printStackTrace();
 		}
 
-		if (Mensaje.ComparatorMensaje.compareOrden(mensaje.getOrden(), ordenj) < 0) {
-			mensaje.setOrden(ordenj);
+		if (Mensaje.ComparatorMensaje.compareOrden(mensajes[numMensaje].getOrden(), ordenj) < 0) {
+			mensajes[numMensaje].setOrden(ordenj);
 		}
 
 		synchronized (this.getClass()) {
 			lc2(ordenj);
 		}
 
-		mensaje.setNumPropuestas(mensaje.getNumPropuestas() + 1);
-		if (mensaje.getNumPropuestas() == ipServidores.size() * 2) {
-			mensaje.setEstado(Mensaje.DEFINITIVO);
-			String ordenPropuesta = mensaje.getOrden();
+		mensajes[numMensaje].setNumPropuestas(mensajes[numMensaje].getNumPropuestas() + 1);
+		if (mensajes[numMensaje].getNumPropuestas() == ipServidores.size() * 2) {
+			mensajes[numMensaje].setEstado(Mensaje.DEFINITIVO);
+			String ordenPropuesta = mensajes[numMensaje].getOrden();
 
 			semaforoPropuesta.release();
 
