@@ -35,7 +35,8 @@ public class Proceso extends Thread {
 	private Semaphore semaforoPreparados;
 	private Semaphore semaforoPropuesta;
 	private File ficheroLog;
-	private File log;
+	private File debuglog;
+	private File colalog;
 
 	@Context
 	HttpServletRequest request;
@@ -55,7 +56,6 @@ public class Proceso extends Thread {
 		for (int i = 1; i <= 20; i++) {
 			String idMensaje = (char) (OFFSETASCII + idProceso) + "" + i;
 			mensaje = new Mensaje(idMensaje, idProceso, orden);
-			log("[Run/" + mensaje.getId() + "] Envio " + mensaje.getOrden());
 			bMulticast(mensaje, Peticion.MENSAJE);
 
 			try {
@@ -125,20 +125,24 @@ public class Proceso extends Thread {
 			}
 			ficheroLog.createNewFile();
 
-			log = new File(System.getProperty("user.home") + File.separator + "debug" + idProceso + ".log");
-			if (log.exists()) {
-				log.delete();
+			debuglog = new File(System.getProperty("user.home") + File.separator + "debug" + idProceso + ".log");
+			if (debuglog.exists()) {
+				debuglog.delete();
 			}
-			log.createNewFile();
+			debuglog.createNewFile();
+			
+			colalog = new File(System.getProperty("user.home") + File.separator + "cola" + idProceso + ".log");
+			if (colalog.exists()) {
+				colalog.delete();
+			}
+			colalog.createNewFile();
 
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 
 		try {
-			System.out.println("antes acquire");
 			semaforoPreparados.acquire(ipServidores.size() * 2);
-			System.out.println("despues acquire");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -153,7 +157,6 @@ public class Proceso extends Thread {
 			@QueryParam(value = "k") String k) {
 		String ip;
 		int destinatario;
-		System.err.println("[Mensaje] Proceso " + idProceso + " mensaje: " + m);
 		synchronized (this.getClass()) {
 			lc1();
 		}
@@ -164,8 +167,6 @@ public class Proceso extends Thread {
 
 		// Reconversion de ipv6 a ipv4 cuando viene de localhost
 		ip = request.getRemoteAddr().equals(LOCALHOSTIPV6) ? "localhost" : request.getRemoteAddr();
-
-		System.out.println("[Mensaje/" + ip + "]: " + " m=" + m + " k=" + k);
 
 		destinatario = (emisor % 2 == 0) ? 2 : 1; // Procesos de 1 a 6, para
 													// envio deben ser 1 o 2
@@ -222,7 +223,6 @@ public class Proceso extends Thread {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
-		System.err.println("[Acuerdo] Proceso " + idProceso + " mensaje: " + k);
 
 		// cola.get(k)
 		Mensaje mensajeAcuerdo = null;
@@ -250,7 +250,7 @@ public class Proceso extends Thread {
 		for (Mensaje mensaje : cola) {
 			aux += mensaje.getId() + " " + mensaje.getOrden() + " " + mensaje.getEstado() + "\n";
 		}
-		log(aux + "**************" + idProceso + "******************\n");
+		colalog(aux + "**************" + idProceso + "******************\n");
 
 		/****************************************/
 		
@@ -260,7 +260,6 @@ public class Proceso extends Thread {
 			while (mensajeAcuerdo.getEstado().compareTo(Mensaje.DEFINITIVO) == 0) {
 				// Escritura mensaje en fichero
 				try {
-					System.err.println("[Acuerdo] idProceso: " + idProceso);
 
 					Files.write(Paths.get(ficheroLog.getPath()),
 							(mensajeAcuerdo.getId() + " " + mensajeAcuerdo.getOrden() + "\n").getBytes(),
@@ -304,8 +303,19 @@ public class Proceso extends Thread {
 				public void run() {
 					Peticion.peticionGet(ip, metodo, "proceso=1" + "&emisor=" + idProceso + "&m="
 							+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
+					System.out.println("[" + idProceso + "] -> " + ip + "/" + "1 " + mensaje.getId());
 				}
 			}).start();
+			
+			System.out.println("[" + idProceso + "] -> " + ip + "/" + "1 despues" + mensaje.getId());
+			
+			log("[Run/" + mensaje.getId() + "] Envio " + mensaje.getOrden() + " a" + ip + "/" + "1");
+			
+			try {
+				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			
 			new Thread(new Runnable() {
 
@@ -313,10 +323,12 @@ public class Proceso extends Thread {
 				public void run() {
 					Peticion.peticionGet(ip, metodo, "proceso=2" + "&emisor=" + idProceso + "&m="
 							+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
+					System.out.println("[" + idProceso + "] -> " + ip + "/" + "2 " + mensaje.getId());
 				}
 			}).start();
 			
-
+			log("[Run/" + mensaje.getId() + "] Envio " + mensaje.getOrden() + " a" + ip + "/" + "2");
+			
 			try {
 				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
 			} catch (InterruptedException e) {
@@ -336,6 +348,12 @@ public class Proceso extends Thread {
 				}
 			}).start();
 
+			try {
+				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
 			new Thread(new Runnable() {
 
 				@Override
@@ -355,7 +373,18 @@ public class Proceso extends Thread {
 	private void log(String texto) {
 		try {
 
-			Files.write(Paths.get(log.getPath()), texto.getBytes(), StandardOpenOption.APPEND);
+			Files.write(Paths.get(debuglog.getPath()), texto.getBytes(), StandardOpenOption.APPEND);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			// TODO: handle exception
+		}
+	}
+	
+	private void colalog(String texto) {
+		try {
+
+			Files.write(Paths.get(colalog.getPath()), texto.getBytes(), StandardOpenOption.APPEND);
 
 		} catch (Exception e) {
 			e.printStackTrace();
