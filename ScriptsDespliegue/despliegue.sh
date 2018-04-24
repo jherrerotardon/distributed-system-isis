@@ -9,8 +9,9 @@ if ! [ -e /home/$USER/.ssh/id_rsa ]; then
 	done
 fi
 
-#tar xzf PracticaObligatoriaISIS.tar.gz 
-#./tomcat-ISIS/bin/startup.sh
+tar xzf PracticaObligatoriaISIS.tar.gz
+chmod +x ./tomcat-ISIS/bin/*
+./tomcat-ISIS/bin/startup.sh
 for (( i=1; i<${#ips[@]}; i++ )) do
 	./remoto.sh ${ips[$i]}
 done

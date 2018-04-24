@@ -247,7 +247,7 @@ public class Proceso extends Thread {
 			cola.sort(new Mensaje.ComparatorMensaje());
 		}
 
-		log("[Acuerdo/" + mensaje.getId() + " " + mensaje.getOrden() + "]\n");
+		//log("[Acuerdo/" + mensaje.getId() + " " + mensaje.getOrden() + "]\n");
 
 		/***************************************/
 		String aux = "";
@@ -307,13 +307,13 @@ public class Proceso extends Thread {
 				public void run() {
 					Peticion.peticionGet(ip, metodo, "proceso=1" + "&emisor=" + idProceso + "&m="
 							+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
-					System.out.println("[" + idProceso + "] -> " + ip + "/" + "1 " + mensaje.getId());
+					//System.out.println("[" + idProceso + "] -> " + ip + "/" + "1 " + mensaje.getId());
 				}
 			}).start();
 			
-			System.out.println("[" + idProceso + "] -> " + ip + "/" + "1 despues" + mensaje.getId());
+			//System.out.println("[" + idProceso + "] -> " + ip + "/" + "1 despues" + mensaje.getId());
 			
-			log("[Run/" + mensaje.getId() + "] Envio " + mensaje.getOrden() + " a" + ip + "/" + "1");
+			//log("[Run/" + mensaje.getId() + "] Envio " + mensaje.getOrden() + " a" + ip + "/" + "1");
 			
 			try {
 				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));
@@ -327,11 +327,11 @@ public class Proceso extends Thread {
 				public void run() {
 					Peticion.peticionGet(ip, metodo, "proceso=2" + "&emisor=" + idProceso + "&m="
 							+ m.getContenido().replace(' ', '+') + "&" + "k=" + m.getId());
-					System.out.println("[" + idProceso + "] -> " + ip + "/" + "2 " + mensaje.getId());
+					//System.out.println("[" + idProceso + "] -> " + ip + "/" + "2 " + mensaje.getId());
 				}
 			}).start();
 			
-			log("[Run/" + mensaje.getId() + "] Envio " + mensaje.getOrden() + " a" + ip + "/" + "2");
+			//log("[Run/" + mensaje.getId() + "] Envio " + mensaje.getOrden() + " a" + ip + "/" + "2");
 			
 			try {
 				Thread.sleep((long) ((Math.random() * 0.3 + 0.2) * 1000));

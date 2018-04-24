@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sftp $USER@$1 << 'ENDSFTP'
-	put hola.txt
+	put PracticaObligatoriaISIS.tar.gz
 	bye
 ENDSFTP
 
