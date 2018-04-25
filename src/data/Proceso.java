@@ -126,7 +126,7 @@ public class Proceso extends Thread {
 
 		this.start();
 
-		return "OK p: " + this.idProceso;
+		return "Proceso " + this.idProceso + ": OK\n";
 	}
 
 	@Path("mensaje")
