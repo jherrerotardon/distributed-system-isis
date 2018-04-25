@@ -13,5 +13,5 @@ tar xzf PracticaObligatoriaISIS.tar.gz
 chmod +x ./tomcat-ISIS/bin/*
 ./tomcat-ISIS/bin/startup.sh
 for (( i=1; i<${#ips[@]}; i++ )) do
-	./remoto.sh ${ips[$i]}
+	./remotoDespliegue.sh ${ips[$i]}
 done
