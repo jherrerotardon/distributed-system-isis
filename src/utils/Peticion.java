@@ -19,7 +19,6 @@ public class Peticion {
 		
 		try {
 			URL url = new URL(servicio + metodo);
-			System.out.println("url: " + url.toString());
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			
 			conn.setRequestMethod("GET");
@@ -47,7 +46,6 @@ public class Peticion {
 		
 		try {
 			URL url = new URL(servicio + metodo + '?' + args);
-			System.out.println("url: " + url.toString());
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			
 			conn.setRequestMethod("GET");
@@ -106,5 +104,4 @@ public class Peticion {
 		
 		return respuesta;
 	}
-
 }
