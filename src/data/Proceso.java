@@ -25,7 +25,7 @@ import utils.Peticion;
 public class Proceso extends Thread {
 
 	private final String LOCALHOSTIPV6 = "0:0:0:0:0:0:0:1";
-	private final char OFFSETASCII = 64;
+	private final char OFFSETASCII = 64; // Caracter generador de identificadores unico de mensaje.
 	private final int NMENSAJES = 100;
 
 	private List<String> ipServidores;
@@ -33,13 +33,14 @@ public class Proceso extends Thread {
 	private int orden;
 	private int idProceso;
 	private Mensaje[] mensajes;
-	private Semaphore semaforoCola;
-	private Semaphore semaforoPreparados;
-	private Semaphore semaforoPropuesta;
+	private Semaphore semaforoCola; // Semaforo utilizado para sincronizar el acceso a la cola.
+	private Semaphore semaforoPreparados; // Semaforo utilizado para esperar que todos los procesos se inicialicen.
+	private Semaphore semaforoPropuesta; // Semaforo utilizado para sincronizar la llegada de propuestas.
 	private File ficheroLog;
 
 	@Context
-	HttpServletRequest request;
+	HttpServletRequest request; // Almacenamiento de datos de la peticion, usado para obtener la IP del emisor
+								// de la peticion.
 
 	public Proceso() {
 		this.cola = new ArrayList<>();
@@ -52,6 +53,10 @@ public class Proceso extends Thread {
 		this.semaforoCola = new Semaphore(1);
 	}
 
+	/*
+	 * Metodo run del hilo. Genera una cantidad de mensajes que son multidifundufos
+	 * a todos los procesos.
+	 */
 	@Override
 	public void run() {
 
@@ -68,6 +73,11 @@ public class Proceso extends Thread {
 		}
 	}
 
+	/*
+	 * Servicio preparado. Encargado de recibir una peticion cada vez que un proceso
+	 * se ha inicializado correctamente. Incrementa un semaforo para dar comienzo al
+	 * algoritmo.
+	 */
 	@Path("preparado")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
@@ -76,12 +86,21 @@ public class Proceso extends Thread {
 		return "OK";
 	}
 
+	/*
+	 * Servicio inicializar. Se reciben por parametro el identificador de proceso y
+	 * las IPs de cada servidor. Con estos valores se inicializan todos los
+	 * variables de instancia. Una vez inicializadas correctamente se indica a los
+	 * demas procesos que dicho proceso esta listo.
+	 */
 	@Path("inicializar")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String inicializar(@QueryParam(value = "idproceso") int idProceso, @QueryParam(value = "ips") String ips) {
 		String[] ipParams;
+
 		this.idProceso = idProceso;
+
+		// Almacenar las IPs en un vector, las cuales son separadas por el caracter '*'.
 		if (ips != null) {
 			ipParams = ips.split("\\*");
 
@@ -90,6 +109,7 @@ public class Proceso extends Thread {
 			}
 		}
 
+		// Peticiones a los demas procesos de que se está preparado.
 		for (String ip : ipServidores) {
 			new Thread(new Runnable() {
 				@Override
@@ -107,6 +127,7 @@ public class Proceso extends Thread {
 
 		}
 
+		// Creacion del fichero de log en la carpeta personal del usuario.
 		try {
 			ficheroLog = new File(System.getProperty("user.home") + File.separator + "proceso" + idProceso + ".log");
 			if (ficheroLog.exists()) {
@@ -118,6 +139,7 @@ public class Proceso extends Thread {
 			e.printStackTrace();
 		}
 
+		// Esperar hasta que todos los procesos estan preparados.
 		try {
 			semaforoPreparados.acquire(ipServidores.size() * 2);
 		} catch (InterruptedException e) {
@@ -129,22 +151,32 @@ public class Proceso extends Thread {
 		return "Proceso " + this.idProceso + ": OK\n";
 	}
 
+	/*
+	 * Servicio mensaje. Se reciben los mensajes de los procesos y se añaden a la
+	 * cola de mensajes. Por ultimo, se constesta con una propuesta al proceso
+	 * emisor.
+	 */
 	@Path("mensaje")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String mensaje(@QueryParam(value = "emisor") int emisor, @QueryParam(value = "m") String m,
 			@QueryParam(value = "k") String k) {
 
-		String ip;
+		String ip; // IP del emisor.
 		int destinatario;
 
+		// Sincronizado el incremento del orden por ser variable compartida entre los
+		// hilos.
 		synchronized (this.getClass()) {
 			lc1();
 		}
-		// Recuperacion y modificaciÃ³n del mensaje antes de guardarlo en la cola
+
+		// Recuperacion y modificacion del mensaje antes de guardarlo en la cola
 		String ordenMensaje = orden + "." + idProceso;
 		Mensaje mensajeCola = new Mensaje(m, k, ordenMensaje, 0, Mensaje.PROVISIONAL);
-		/***********************************/
+
+		// Sincronizado el acceso a la cola debido a la posibilidad de que varios hilos
+		// añadan a la cola a la vez.
 		try {
 			semaforoCola.acquire();
 		} catch (InterruptedException e) {
@@ -152,16 +184,14 @@ public class Proceso extends Thread {
 		}
 		cola.add(mensajeCola);
 		semaforoCola.release();
-		/*********************************/
 
 		// Reconversion de ipv6 a ipv4 cuando viene de localhost
 		ip = request.getRemoteAddr().equals(LOCALHOSTIPV6) ? "localhost" : request.getRemoteAddr();
 
-		destinatario = (emisor % 2 == 0) ? 2 : 1; // Procesos de 1 a 6, para
-													// envio deben ser 1 o 2
-
+		destinatario = (emisor % 2 == 0) ? 2 : 1; // Transformacion de identificador de proceso de 1 a 6 a 1 o 2 para el
+													// envio.
+		// Envio de la propuesta.
 		new Thread(new Runnable() {
-
 			@Override
 			public void run() {
 				Peticion.peticionGet(ip, Peticion.PROPUESTA,
@@ -172,26 +202,37 @@ public class Proceso extends Thread {
 		return "OK";
 	}
 
+	/*
+	 * Servicio propuesta. Se reciben las propuestas de los demás procesos. Una vez
+	 * recibidas propuestas de todos los procesos se multidifunde un acuerdo para
+	 * ese mensaje determinado eligiendo el orden mayor de entre todas las
+	 * propuestas.
+	 */
 	@Path("propuesta")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		int indiceMensaje = Integer.parseInt(k.substring(1)) - 1;
 
+		// Sincronizado el acceso al mensaje recibido y a la variable orden del proceso.
 		try {
 			semaforoPropuesta.acquire();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
+		// Modificacion del orden del mensaje si es menor que el orden propuesto.
 		if (Mensaje.ComparatorMensaje.compareOrden(mensajes[indiceMensaje].getOrden(), ordenj) < 0) {
 			mensajes[indiceMensaje].setOrden(ordenj);
 		}
 
+		// Sincronizado el incremento del orden del proceso.
 		synchronized (this.getClass()) {
 			lc2(ordenj);
 		}
 
+		// Multidifundir acuerdo si se han recibido propuestas de dicho mensaje de todos
+		// los procesos.
 		mensajes[indiceMensaje].setNumPropuestas(mensajes[indiceMensaje].getNumPropuestas() + 1);
 		if (mensajes[indiceMensaje].getNumPropuestas() == ipServidores.size() * 2) {
 			mensajes[indiceMensaje].setEstado(Mensaje.DEFINITIVO);
@@ -203,15 +244,22 @@ public class Proceso extends Thread {
 		} else {
 			semaforoPropuesta.release();
 		}
+
 		return "OK";
 	}
 
+	/*
+	 * Servicio acuerdo. Recibe al cuerdo de un determnado mensaje y lo cambia a
+	 * DEFINITIVO. A su vez, imprime en el fichero log los mensajes que se
+	 * encuentran en la cola en estado DEFINITIVO siempre y cuando no haya otro
+	 * mensaje con un orden menor con estado PROVISIONAL.
+	 */
 	@Path("acuerdo")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 
-		// cola.get(k)
+		// Recuperar de la cola el mensaje con identificador k.
 		Mensaje mensajeAcuerdo = null;
 		for (Mensaje m : cola) {
 			if (m.getId().equals(k)) {
@@ -220,27 +268,31 @@ public class Proceso extends Thread {
 			}
 		}
 
+		// Establecer orden y estado final del mensaje.
 		mensajeAcuerdo.setOrden(ordenj);
+		mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
 
+		// Sincronizado el incremento del orden del proceso.
 		synchronized (this.getClass()) {
 			lc2(ordenj);
-
-			mensajeAcuerdo.setEstado(Mensaje.DEFINITIVO);
-
-			cola.sort(new Mensaje.ComparatorMensaje());
 		}
 
-		// Escribir la cola en el fichero.
+		// Sincronizado el acceso y manipulacion de la cola de mensajes.
 		try {
 			semaforoCola.acquire();
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
 		if (!cola.isEmpty()) {
+
+			// Reordenacion de la cola de mensajes (de menor a mayor) usando su orden.
+			cola.sort(new Mensaje.ComparatorMensaje());
+
 			mensajeAcuerdo = cola.get(0);
 
+			// Escritura de la cola de mensajes en el fichero log. Se escriben mensajes de
+			// la cola mientras sean DEFNITIVOS.
 			while (mensajeAcuerdo.getEstado().compareTo(Mensaje.DEFINITIVO) == 0) {
-				// Escritura mensaje en fichero
 				try {
 
 					Files.write(Paths.get(ficheroLog.getPath()),
@@ -251,6 +303,7 @@ public class Proceso extends Thread {
 					e.printStackTrace();
 				}
 
+				// Eliminacion del mesaje que ya se ha ecrito en el fichero.
 				cola.remove(0);
 				if (cola.isEmpty()) {
 					break;
@@ -263,10 +316,13 @@ public class Proceso extends Thread {
 		return "OK";
 	}
 
+	// Incremento del orden de proceso.
 	private void lc1() {
 		orden += 1;
 	}
 
+	// Actualizacion del orden de proceso en funcion del orden recibido por
+	// parametro.
 	private void lc2(String ordenj) {
 		int valorOrdenj = Integer.parseInt(ordenj.split("\\.")[0]);
 
@@ -277,11 +333,11 @@ public class Proceso extends Thread {
 		}
 	}
 
+	// Multidifusion del mensaje recibido por parametro a todas las IPs.
 	private void bMulticast(Mensaje m, String metodo) {
 
 		for (String ip : ipServidores) {
 			new Thread(new Runnable() {
-
 				@Override
 				public void run() {
 					Peticion.peticionGet(ip, metodo, "proceso=1" + "&emisor=" + idProceso + "&m="
@@ -296,7 +352,6 @@ public class Proceso extends Thread {
 			}
 
 			new Thread(new Runnable() {
-
 				@Override
 				public void run() {
 					Peticion.peticionGet(ip, metodo, "proceso=2" + "&emisor=" + idProceso + "&m="
@@ -312,6 +367,7 @@ public class Proceso extends Thread {
 		}
 	}
 
+	// Multidifusion del mensaje recibido por parametro a todas las IPs.
 	private void bMulticast(String k, String orden, String metodo) {
 
 		for (String ip : ipServidores) {

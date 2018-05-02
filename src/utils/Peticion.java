@@ -8,6 +8,7 @@ import java.net.URL;
 
 public class Peticion {
 	
+	//Servicios disponibles a los que hacer la peticion.
 	public static final String MENSAJE = "mensaje";
 	public static final String PROPUESTA = "propuesta";
 	public static final String ACUERDO = "acuerdo";
@@ -39,7 +40,7 @@ public class Peticion {
 		return respuesta;
 	}
 	
-	//GET con argumentos
+	//Peticion GET con argumentos.
 	public static String peticionGet(String ip, String metodo, String args) {
 		String respuesta = "";
 		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/dispatcher/";
@@ -66,7 +67,7 @@ public class Peticion {
 		return respuesta;
 	}
 	
-	//POST mediante json
+	//Peticion POST mediante json.
 	public static String peticionPost(String ip, String metodo, String jsonMensaje) {
 		String respuesta = "";
 		String servicio = "http://"+ip+":8080/PracticaObligatoriaISIS/services/dispatcher/";
@@ -74,9 +75,6 @@ public class Peticion {
 		try {
 			URL url = new URL(servicio + metodo);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			
-			
-			System.out.println("envio" + jsonMensaje);
 			
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("Content-Type", "application/json");
