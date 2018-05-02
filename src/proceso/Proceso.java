@@ -1,4 +1,4 @@
-package data;
+package proceso;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +18,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import data.Mensaje;
+import data.Mensaje.ComparatorMensaje;
 import utils.Peticion;
 
 @Singleton
@@ -213,7 +215,7 @@ public class Proceso extends Thread {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		int indiceMensaje = Integer.parseInt(k.substring(1)) - 1;
-
+		
 		// Sincronizado el acceso al mensaje recibido y a la variable orden del proceso.
 		try {
 			semaforoPropuesta.acquire();
