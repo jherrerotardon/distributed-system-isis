@@ -63,7 +63,7 @@ public class Proceso extends Thread {
 
 		for (int i = 1; i <= NMENSAJES; i++) {
 			String idMensaje = (char) (OFFSETASCII + idProceso) + "" + i;
-			mensajes[i - 1] = new Mensaje(idMensaje, idProceso, orden);
+			mensajes[i - 1] = new Mensaje(idMensaje, idProceso, i);
 			bMulticast(mensajes[i - 1], Peticion.MENSAJE);
 
 			try {
@@ -296,7 +296,7 @@ public class Proceso extends Thread {
 			while (mensajeAcuerdo.getEstado().compareTo(Mensaje.DEFINITIVO) == 0) {
 				try {
 
-					Files.write(Paths.get(ficheroLog.getPath()), mensajeAcuerdo.getContenido().getBytes(),
+					Files.write(Paths.get(ficheroLog.getPath()), (mensajeAcuerdo.getContenido() + '\n').getBytes(),
 							StandardOpenOption.APPEND);
 
 				} catch (IOException e) {
