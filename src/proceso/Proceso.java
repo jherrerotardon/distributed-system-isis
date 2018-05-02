@@ -19,7 +19,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import data.Mensaje;
-import data.Mensaje.ComparatorMensaje;
 import utils.Peticion;
 
 @Singleton
@@ -215,7 +214,7 @@ public class Proceso extends Thread {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String propuesta(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 		int indiceMensaje = Integer.parseInt(k.substring(1)) - 1;
-		
+
 		// Sincronizado el acceso al mensaje recibido y a la variable orden del proceso.
 		try {
 			semaforoPropuesta.acquire();
@@ -297,8 +296,7 @@ public class Proceso extends Thread {
 			while (mensajeAcuerdo.getEstado().compareTo(Mensaje.DEFINITIVO) == 0) {
 				try {
 
-					Files.write(Paths.get(ficheroLog.getPath()),
-							(mensajeAcuerdo.getId() + " " + mensajeAcuerdo.getOrden() + "\n").getBytes(),
+					Files.write(Paths.get(ficheroLog.getPath()), mensajeAcuerdo.getContenido().getBytes(),
 							StandardOpenOption.APPEND);
 
 				} catch (IOException e) {

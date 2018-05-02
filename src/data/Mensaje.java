@@ -14,7 +14,7 @@ public class Mensaje {
 	private  String estado;
 
 	public Mensaje(String id,  int idProceso, int numMensaje) {
-		this.contenido = "P" + idProceso + " " + numMensaje;
+		this.contenido = String.format("P%02d %03d", idProceso, numMensaje);
 		this.id = id;
 		this.orden = numMensaje + "." + idProceso;
 	}
