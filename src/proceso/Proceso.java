@@ -261,6 +261,12 @@ public class Proceso extends Thread {
 	public String acuerdo(@QueryParam(value = "k") String k, @QueryParam(value = "orden") String ordenj) {
 
 		// Recuperar de la cola el mensaje con identificador k.
+		try {
+			semaforoCola.acquire();
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
+		
 		Mensaje mensajeAcuerdo = null;
 		for (Mensaje m : cola) {
 			if (m.getId().equals(k)) {
@@ -268,6 +274,7 @@ public class Proceso extends Thread {
 				break;
 			}
 		}
+		semaforoCola.release();
 
 		// Establecer orden y estado final del mensaje.
 		mensajeAcuerdo.setOrden(ordenj);
@@ -281,8 +288,8 @@ public class Proceso extends Thread {
 		// Sincronizado el acceso y manipulacion de la cola de mensajes.
 		try {
 			semaforoCola.acquire();
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 		if (!cola.isEmpty()) {
 
