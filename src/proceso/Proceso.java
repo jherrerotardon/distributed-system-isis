@@ -102,7 +102,7 @@ public class Proceso extends Thread {
 		this.idProceso = idProceso;
 
 		// Almacenar las IPs en un vector, las cuales son separadas por el caracter '*'.
-		if (ips != null) {
+		if (ips != null && !ips.equals("")) {
 			ipParams = ips.split("\\*");
 
 			for (String ip : ipParams) {
